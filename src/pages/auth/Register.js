@@ -1,4 +1,9 @@
 import React, {useState} from 'react'
+import { auth,db } from '../../firebaseConfig';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { setDoc, doc, Timestamp } from 'firebase/firestore';
+import { IoSnowOutline } from 'react-icons/io5';
+import { useNavigate } from 'react-router-dom';
 
 const Register = () => {
   const [values, setValues] = useState({
@@ -8,14 +13,56 @@ const Register = () => {
     confirmPassword: "",
     error: "",
     loading: false
-  })
+  });
+
+  const navigate = useNavigate();
 
   const{name , email, password, confirmPassword, error, loading} = values;
 
   const handleChange = e => setValues({...values, [e.target.name]: e.target.value })
 
+  
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+  
+
+    if(!name || !email || !password || !confirmPassword)
+    {
+      setValues({...values, error: "All fields are required!"});
+    }
+
+    if(password !== confirmPassword)
+    {
+      setValues({...values, error: "Password must match!"});
+      return;
+    }
+
+    setValues({...values, error: "", loading: true})
+
+    try {
+      const result = await createUserWithEmailAndPassword(auth,email,password);
+      await setDoc(doc(db, 'users', result.user.uid), {
+        uid: result.user.uid,
+        name,
+        email,
+        createdAt: Timestamp.fromDate(new Date()),
+        isOnline: true
+      }, { merge: true });
+      
+
+      setValues({name:'', email: '', password: '',confirmPassword:'', error: '', loading: false,});
+
+      navigate("/");
+      
+    } catch (error) {
+
+      setValues({...values, error: error.message, loading: false});
+      
+    }
+  };
+
   return (
-    <form className='shadow rounded p-3 mt-5 form'>
+    <form className='shadow rounded p-3 mt-5 form' onSubmit={handleSubmit}>
       <h3 className='text-center mb-3'> Create An Account</h3>
       <div className='mb-3'>
         <label htmlFor='name' className='form-label'>
@@ -42,8 +89,9 @@ const Register = () => {
         <input type='text' className='form-control' name='confirmPassword' value = {confirmPassword} onChange={handleChange}/>
       </div>
       <div className='text-center mb-3'>
-        <button className='btn btn-secondary btn-sm'>Register</button>
+        <button className='btn btn-secondary btn-sm' disabled={loading}>Register</button>
       </div>
+
     </form>
   );
 }
