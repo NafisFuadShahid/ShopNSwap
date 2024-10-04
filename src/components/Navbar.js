@@ -10,14 +10,17 @@ const Navbar = () => {
   const navigate = useNavigate();
 
   const handleSignout = async () => {
-    // update user doc
-    await updateDoc(doc(db, "users", user.uid), {
-      isOnline: false,
-    });
-    // logout
-    await signOut(auth);
-    // navigate to login
-    navigate("/auth/login");
+    const confirm = window.confirm("Are you sure you want to log out?");
+    if (confirm) {
+      // Update user doc
+      await updateDoc(doc(db, "users", user.uid), {
+        isOnline: false,
+      });
+      // Logout
+      await signOut(auth);
+      // Navigate to login
+      navigate("/auth/login");
+    }
   };
 
   return (
