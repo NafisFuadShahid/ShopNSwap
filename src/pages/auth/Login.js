@@ -1,22 +1,20 @@
 import React, { useState } from "react";
 import { auth, db } from "../../firebaseConfig";
-import { createUserWithEmailAndPassword } from "firebase/auth";
-import { setDoc, doc, Timestamp } from "firebase/firestore";
-import { useNavigate } from "react-router-dom";
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { doc, updateDoc } from "firebase/firestore";
+import { useNavigate, Link } from "react-router-dom";
 
-const Register = () => {
+const Login = () => {
   const [values, setValues] = useState({
-    name: "",
     email: "",
     password: "",
-    confirmPassword: "",
     error: "",
     loading: false,
   });
 
   const navigate = useNavigate();
 
-  const { name, email, password, confirmPassword, error, loading } = values;
+  const { email, password, error, loading } = values;
 
   const handleChange = (e) =>
     setValues({ ...values, [e.target.name]: e.target.value });
@@ -24,37 +22,23 @@ const Register = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!name || !email || !password || !confirmPassword) {
+    if (!email || !password) {
       setValues({ ...values, error: "All fields are required" });
-      return;
-    }
-    if (password !== confirmPassword) {
-      setValues({ ...values, error: "Password must match" });
       return;
     }
 
     setValues({ ...values, error: "", loading: true });
 
     try {
-      const result = await createUserWithEmailAndPassword(
-        auth,
-        email,
-        password
-      );
+      const result = await signInWithEmailAndPassword(auth, email, password);
 
-      await setDoc(doc(db, "users", result.user.uid), {
-        uid: result.user.uid,
-        name,
-        email,
-        createdAt: Timestamp.fromDate(new Date()),
+      await updateDoc(doc(db, "users", result.user.uid), {
         isOnline: true,
       });
 
       setValues({
-        name: "",
         email: "",
         password: "",
-        confirmPassword: "",
         error: "",
         loading: false,
       });
@@ -66,19 +50,7 @@ const Register = () => {
   };
   return (
     <form className="shadow rounded p-3 mt-5 form" onSubmit={handleSubmit}>
-      <h3 className="text-center mb-3">Create An Account</h3>
-      <div className="mb-3">
-        <label htmlFor="name" className="form-label">
-          Name
-        </label>
-        <input
-          type="text"
-          className="form-control"
-          name="name"
-          value={name}
-          onChange={handleChange}
-        />
-      </div>
+      <h3 className="text-center mb-3">Log Into Your Account</h3>
       <div className="mb-3">
         <label htmlFor="email" className="form-label">
           Email
@@ -103,26 +75,19 @@ const Register = () => {
           onChange={handleChange}
         />
       </div>
-      <div className="mb-3">
-        <label htmlFor="confirmPassword" className="form-label">
-          Confirm Password
-        </label>
-        <input
-          type="password"
-          className="form-control"
-          name="confirmPassword"
-          value={confirmPassword}
-          onChange={handleChange}
-        />
-      </div>
       {error ? <p className="text-center text-danger">{error}</p> : null}
       <div className="text-center mb-3">
         <button className="btn btn-secondary btn-sm" disabled={loading}>
-          Register
+          Login
         </button>
+      </div>
+      <div className="text-center mb-3">
+        <small>
+          <Link to="/auth/forgot-password">Forgot Password</Link>
+        </small>
       </div>
     </form>
   );
 };
 
-export default Register;
+export default Login;

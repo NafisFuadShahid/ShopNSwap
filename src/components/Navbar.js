@@ -1,9 +1,24 @@
+import { signOut } from "firebase/auth";
+import { doc, updateDoc } from "firebase/firestore";
 import React, { useContext } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { AuthContext } from "../context/auth";
+import { auth, db } from "../firebaseConfig";
 
 const Navbar = () => {
   const { user } = useContext(AuthContext);
+  const navigate = useNavigate();
+
+  const handleSignout = async () => {
+    // update user doc
+    await updateDoc(doc(db, "users", user.uid), {
+      isOnline: false,
+    });
+    // logout
+    await signOut(auth)
+    // navigate to login
+    navigate("/auth/login");
+  };
 
   return (
     <nav className="navbar navbar-expand-md bg-light navbar-light sticky-top shadow-sm">
@@ -26,7 +41,12 @@ const Navbar = () => {
           <ul className="navbar-nav ms-auto mb-2 mb-lg-0">
             {user ? (
               <>
-                <button className="btn btn-danger btn-sm">Log out</button>
+                <button
+                  className="btn btn-danger btn-sm"
+                  onClick={handleSignout}
+                >
+                  Logout
+                </button>
               </>
             ) : (
               <>
