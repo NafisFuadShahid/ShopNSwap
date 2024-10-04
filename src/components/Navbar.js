@@ -21,47 +21,49 @@ const Navbar = () => {
   };
 
   return (
-    <nav className="navbar navbar-expand-md bg-light navbar-light sticky-top shadow-sm">
+    <nav className="navbar navbar-expand-md navbar-light bg-white shadow-sm sticky-top">
       <div className="container">
-        <Link className="navbar-brand" to="/">
+        <Link className="navbar-brand fw-bold text-primary pulse-logo" to="/">
           ShopNSwap
         </Link>
         <button
-          className="navbar-toggler"
+          className="navbar-toggler border-0"
           type="button"
           data-bs-toggle="collapse"
-          data-bs-target="#navbarSupportedContent"
-          aria-controls="navbarSupportedContent"
+          data-bs-target="#navbarNav"
+          aria-controls="navbarNav"
           aria-expanded="false"
           aria-label="Toggle navigation"
         >
           <span className="navbar-toggler-icon"></span>
         </button>
-        <div className="collapse navbar-collapse" id="navbarSupportedContent">
-          <ul className="navbar-nav ms-auto mb-2 mb-lg-0">
+        <div className="collapse navbar-collapse" id="navbarNav">
+          <ul className="navbar-nav ms-auto align-items-center">
             {user ? (
               <>
                 <li className="nav-item">
-                  <Link className="nav-link" to={`/profile/${user.uid}`}>
+                  <Link className="nav-link text-dark rotate-on-hover" to={`/profile/${user.uid}`}>
                     Profile
                   </Link>
                 </li>
-                <button
-                  className="btn btn-danger btn-sm"
-                  onClick={handleSignout}
-                >
-                  Logout
-                </button>
+                <li className="nav-item ms-3">
+                  <button
+                    className="btn btn-outline-danger btn-sm rotate-on-hover"
+                    onClick={handleSignout}
+                  >
+                    Logout
+                  </button>
+                </li>
               </>
             ) : (
               <>
                 <li className="nav-item">
-                  <Link className="nav-link" to="/auth/register">
+                  <Link className="nav-link text-dark" to="/auth/register">
                     Register
                   </Link>
                 </li>
                 <li className="nav-item">
-                  <Link className="nav-link" to="/auth/login">
+                  <Link className="nav-link text-dark" to="/auth/login">
                     Login
                   </Link>
                 </li>
