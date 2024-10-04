@@ -6,6 +6,7 @@ import Login from "./pages/auth/Login";
 import ForgotPassword from "./pages/auth/ForgotPassword";
 import ResetPassword from "./pages/auth/ResetPassword";
 import Home from "./pages/Home";
+import Profile from "./pages/Profile";
 import AuthProvider from "./context/auth";
 
 function App() {
@@ -16,9 +17,10 @@ function App() {
         <Routes>
           <Route path="/auth/register" element={<Register />} />
           <Route path="/auth/login" element={<Login />} />
-          <Route path="/" element={<Home />} />
           <Route path="/auth/forgot-password" element={<ForgotPassword />} />
           <Route path="/auth/reset-password" element={<ResetPassword />} />
+          <Route path="/profile/:id" element={<Profile />} />
+          <Route path="/" element={<Home />} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>

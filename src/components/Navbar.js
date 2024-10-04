@@ -15,7 +15,7 @@ const Navbar = () => {
       isOnline: false,
     });
     // logout
-    await signOut(auth)
+    await signOut(auth);
     // navigate to login
     navigate("/auth/login");
   };
@@ -41,6 +41,11 @@ const Navbar = () => {
           <ul className="navbar-nav ms-auto mb-2 mb-lg-0">
             {user ? (
               <>
+                <li className="nav-item">
+                  <Link className="nav-link" to={`/profile/${user.uid}`}>
+                    Profile
+                  </Link>
+                </li>
                 <button
                   className="btn btn-danger btn-sm"
                   onClick={handleSignout}
