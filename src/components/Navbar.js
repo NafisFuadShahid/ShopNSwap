@@ -1,5 +1,5 @@
 import { signOut } from "firebase/auth";
-import { doc, updateDoc, getDoc } from "firebase/firestore"; // Importing getDoc to fetch data from Firestore
+import { doc, updateDoc, onSnapshot } from "firebase/firestore"; // Using onSnapshot for real-time updates
 import React, { useContext, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { AuthContext } from "../context/auth";
@@ -14,18 +14,20 @@ const Navbar = () => {
   const [photoUrl, setPhotoUrl] = useState(null); // State to hold the photo URL
 
   useEffect(() => {
-    const fetchUserData = async () => {
-      if (user) {
-        const userDocRef = doc(db, "users", user.uid);
-        const userDocSnap = await getDoc(userDocRef);
-        if (userDocSnap.exists()) {
-          const userData = userDocSnap.data();
-          setPhotoUrl(userData.photoUrl); // Set the photo URL from Firestore
-        }
-      }
-    };
+    if (user) {
+      const userDocRef = doc(db, "users", user.uid);
 
-    fetchUserData();
+      // Listen to real-time updates on the user's document
+      const unsubscribe = onSnapshot(userDocRef, (docSnapshot) => {
+        if (docSnapshot.exists()) {
+          const userData = docSnapshot.data();
+          setPhotoUrl(userData.photoUrl || null); // Set photoUrl or null if it's removed
+        }
+      });
+
+      // Clean up the listener when the component unmounts
+      return () => unsubscribe();
+    }
   }, [user]);
 
   const handleSignout = async () => {
@@ -76,7 +78,7 @@ const Navbar = () => {
                             width: "40px",
                             height: "40px",
                             objectFit: "cover",
-                            
+                    
                           }}
                         />
                       ) : (
