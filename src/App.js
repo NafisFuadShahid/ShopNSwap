@@ -8,6 +8,8 @@ import ResetPassword from "./pages/auth/ResetPassword";
 import Home from "./pages/Home";
 import Profile from "./pages/Profile";
 import AuthProvider from "./context/auth";
+import PrivateRoute from "./components/PrivateRoute";
+import Sell from "./pages/Sell";
 
 function App() {
   return (
@@ -15,6 +17,9 @@ function App() {
       <BrowserRouter>
         <Navbar />
         <Routes>
+          <Route element={<PrivateRoute />}>
+            <Route path="/sell" element={<Sell />} />
+          </Route>
           <Route path="/auth/register" element={<Register />} />
           <Route path="/auth/login" element={<Login />} />
           <Route path="/auth/forgot-password" element={<ForgotPassword />} />
