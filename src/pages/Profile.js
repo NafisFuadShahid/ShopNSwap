@@ -1,9 +1,14 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import {
+  collection,
   doc,
+  getDocs,
   onSnapshot,
+  orderBy,
+  query,
   updateDoc,
+  where,
 } from "firebase/firestore";
 import {
   deleteObject,
@@ -25,6 +30,7 @@ const Profile = () => {
   const [img, setImg] = useState("");
   const [ads, setAds] = useState([]);
 
+  // Fetch user data
   const getUser = async () => {
     const unsub = onSnapshot(doc(db, "users", id), (querySnapshot) =>
       setUser(querySnapshot.data())
@@ -33,6 +39,7 @@ const Profile = () => {
     return () => unsub();
   };
 
+  // Upload user image
   const uploadImage = async () => {
     const imgRef = ref(storage, `profile/${Date.now()} - ${img.name}`);
     if (user.photoUrl) {
@@ -47,6 +54,23 @@ const Profile = () => {
     setImg("");
   };
 
+  // Fetch user ads
+  const getAds = async () => {
+    const adsRef = collection(db, "ads");
+    const q = query(
+      adsRef,
+      where("postedBy", "==", id),
+      orderBy("publishedAt", "desc")
+    );
+    const docs = await getDocs(q);
+    let ads = [];
+    docs.forEach((doc) => {
+      ads.push({ ...doc.data(), id: doc.id });
+    });
+    setAds(ads);
+  };
+
+  // Handle image upload and deletion
   const deletePhoto = async () => {
     const confirm = window.confirm("Delete photo permanently?");
     if (confirm) {
@@ -60,6 +84,7 @@ const Profile = () => {
 
   useEffect(() => {
     getUser();
+    getAds();
     if (img) {
       uploadImage();
     }
@@ -127,10 +152,10 @@ const Profile = () => {
           {ads.length ? (
             <h4 className="fw-bold">Products</h4>
           ) : (
-            <h4>There are no products listed yet.</h4>
+            <h4>There are no ads published by this user</h4>
           )}
           <div className="row">
-            {ads.map((ad) => (
+            {ads?.map((ad) => (
               <div key={ad.id} className="col-sm-6 col-md-4 mb-3">
                 <AdCard ad={ad} />
               </div>

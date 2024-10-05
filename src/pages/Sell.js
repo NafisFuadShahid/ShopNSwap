@@ -22,6 +22,9 @@ const Sell = () => {
     error: "",
     loading: false,
   });
+
+  const [imagePreviews, setImagePreviews] = useState([]);
+
   const {
     images,
     title,
@@ -34,8 +37,20 @@ const Sell = () => {
     loading,
   } = values;
 
-  const handleChange = (e) =>
-    setValues({ ...values, [e.target.name]: e.target.value });
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setValues({ ...values, [name]: value });
+
+    // Handle image file selection
+    if (name === "images") {
+      const selectedFiles = Array.from(e.target.files);
+      setValues({ ...values, images: selectedFiles });
+
+      // Create image previews
+      const previews = selectedFiles.map((file) => URL.createObjectURL(file));
+      setImagePreviews(previews);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -44,19 +59,17 @@ const Sell = () => {
 
     try {
       let imgs = [];
-      // loop through images
+      // Loop through images
       if (images.length) {
         for (let image of images) {
           const imgRef = ref(storage, `ads/${Date.now()} - ${image.name}`);
           const result = await uploadBytes(imgRef, image);
-          const fileUrl = await getDownloadURL(
-            ref(storage, result.ref.fullPath)
-          );
+          const fileUrl = await getDownloadURL(ref(storage, result.ref.fullPath));
 
           imgs.push({ url: fileUrl, path: result.ref.fullPath });
         }
       }
-      // add data into firestore
+      // Add data into Firestore
       const result = await addDoc(collection(db, "ads"), {
         images: imgs,
         title,
@@ -72,8 +85,9 @@ const Sell = () => {
 
       await setDoc(doc(db, 'favorites', result.id), {
         users: []
-      })
+      });
 
+      // Reset form values
       setValues({
         images: [],
         title: "",
@@ -81,14 +95,16 @@ const Sell = () => {
         price: "",
         location: "",
         contact: "",
-        description,
+        description: "",
         loading: false,
       });
+      setImagePreviews([]); // Clear previews
       navigate("/");
     } catch (error) {
       setValues({ ...values, error: error.message, loading: false });
     }
   };
+
   return (
     <form className="form shadow rounded p-3 mt-5" onSubmit={handleSubmit}>
       <h3 className="text-center mb-3">Create An Ad</h3>
@@ -104,9 +120,33 @@ const Sell = () => {
           style={{ display: "none" }}
           accept="image/*"
           multiple
-          onChange={(e) => setValues({ ...values, images: e.target.files })}
+          onChange={handleChange}
+          name="images"
         />
       </div>
+      
+      {/* Image Preview Section */}
+      <div className="mb-3 text-center">
+        {imagePreviews.length > 0 && (
+          <div className="image-preview-container">
+            {imagePreviews.map((preview, index) => (
+              <img
+                key={index}
+                src={preview}
+                alt={`Preview ${index + 1}`}
+                style={{
+                  width: "100px",
+                  height: "100px",
+                  objectFit: "cover",
+                  margin: "5px",
+                  borderRadius: "5px",
+                }}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+
       <div className="mb-3">
         <label className="form-label">Title</label>
         <input
