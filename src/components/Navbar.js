@@ -4,6 +4,9 @@ import React, { useContext } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { AuthContext } from "../context/auth";
 import { auth, db } from "../firebaseConfig";
+import { Dropdown } from "react-bootstrap";
+import { FaUserAlt } from "react-icons/fa"; // Importing the icon
+import 'bootstrap/dist/css/bootstrap.min.css';
 
 const Navbar = () => {
   const { user } = useContext(AuthContext);
@@ -12,13 +15,10 @@ const Navbar = () => {
   const handleSignout = async () => {
     const confirm = window.confirm("Are you sure you want to log out?");
     if (confirm) {
-      // Update user doc
       await updateDoc(doc(db, "users", user.uid), {
         isOnline: false,
       });
-      // Logout
       await signOut(auth);
-      // Navigate to login
       navigate("/auth/login");
     }
   };
@@ -45,36 +45,43 @@ const Navbar = () => {
             {user ? (
               <>
                 <li className="nav-item">
-                  <Link
-                    className="nav-link text-dark rotate-on-hover"
-                    to={`/profile/${user.uid}`}
-                  >
-                    Profile
-                  </Link>
-                </li>
-                <li className="nav-item">
-                  <Link
-                    className="nav-link text-dark rotate-on-hover"
-                    to={`/sell`}
-                  >
-                    Sell
-                  </Link>
-                </li>
-                <li className="nav-item">
-                  <Link
-                    className="nav-link text-dark rotate-on-hover"
-                    to={`/favorites`}
-                  >
-                    My Favorites
-                  </Link>
-                </li>
-                <li className="nav-item ms-3">
-                  <button
-                    className="btn btn-outline-danger btn-sm rotate-on-hover"
-                    onClick={handleSignout}
-                  >
-                    Logout
-                  </button>
+                  <Dropdown>
+                    <Dropdown.Toggle
+                      id="dropdown-basic"
+                      variant="light"
+                      className="d-flex align-items-center border-0 bg-transparent"
+                    >
+                      {user.photoUrl ? (
+                        <img
+                          src={user.photoUrl}
+                          alt={user.name || "Profile Avatar"}
+                          className="rounded-circle"
+                          style={{
+                            width: "30px",
+                            height: "30px",
+                            objectFit: "cover",
+                            border: "2px solid #ddd",
+                          }}
+                        />
+                      ) : (
+                        <FaUserAlt size={30} className="text-secondary" />
+                      )}
+                    </Dropdown.Toggle>
+
+                    <Dropdown.Menu>
+                      <Dropdown.Item as={Link} to={`/profile/${user.uid}`}>
+                        Profile
+                      </Dropdown.Item>
+                      <Dropdown.Item as={Link} to={`/sell`}>
+                        Sell
+                      </Dropdown.Item>
+                      <Dropdown.Item as={Link} to={`/favorites`}>
+                        My Favorites
+                      </Dropdown.Item>
+                      <Dropdown.Divider />
+                      <Dropdown.Item onClick={handleSignout}>Logout</Dropdown.Item>
+                    </Dropdown.Menu>
+                  </Dropdown>
                 </li>
               </>
             ) : (

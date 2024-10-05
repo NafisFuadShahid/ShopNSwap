@@ -29,12 +29,15 @@ const Profile = () => {
   const [user, setUser] = useState();
   const [img, setImg] = useState("");
   const [ads, setAds] = useState([]);
+  const [newName, setNewName] = useState(""); // New state for user name
 
   // Fetch user data
   const getUser = async () => {
-    const unsub = onSnapshot(doc(db, "users", id), (querySnapshot) =>
-      setUser(querySnapshot.data())
-    );
+    const unsub = onSnapshot(doc(db, "users", id), (querySnapshot) => {
+      const userData = querySnapshot.data();
+      console.log("User data fetched:", userData); // Debugging line
+      setUser(userData);
+    });
 
     return () => unsub();
   };
@@ -51,6 +54,8 @@ const Profile = () => {
       photoUrl: url,
       photoPath: result.ref.fullPath,
     });
+
+    console.log("Image uploaded:", url); // Debugging line
     setImg("");
   };
 
@@ -72,14 +77,46 @@ const Profile = () => {
 
   // Handle image upload and deletion
   const deletePhoto = async () => {
+    if (!user.photoPath) {
+      console.warn("No photo path available for deletion.");
+      return; // Exit if there's no photo path
+    }
+
     const confirm = window.confirm("Delete photo permanently?");
     if (confirm) {
-      await deleteObject(ref(storage, user.photoPath));
-      await updateDoc(doc(db, "users", auth.currentUser.uid), {
-        photoUrl: "",
-        photoPath: "",
-      });
+      try {
+        // Delete the photo from storage
+        await deleteObject(ref(storage, user.photoPath));
+        // Update user document in Firestore
+        await updateDoc(doc(db, "users", auth.currentUser.uid), {
+          photoUrl: "",
+          photoPath: "",
+        });
+        
+        // Update local state to reflect changes
+        setUser((prev) => ({
+          ...prev,
+          photoUrl: "",
+          photoPath: "",
+        }));
+      } catch (error) {
+        console.error("Error deleting photo: ", error);
+        alert("There was an error deleting the photo.");
+      }
     }
+  };
+
+  // Handle name update
+  const updateName = async () => {
+    if (newName.trim() === "") {
+      alert("Name cannot be empty.");
+      return;
+    }
+
+    await updateDoc(doc(db, "users", auth.currentUser.uid), {
+      name: newName,
+    });
+    setNewName(""); // Clear the input after updating
   };
 
   useEffect(() => {
@@ -89,6 +126,9 @@ const Profile = () => {
       uploadImage();
     }
   }, [img]);
+
+  // Debugging: Log the user state
+  console.log("User state:", user); 
 
   return user ? (
     <div className="container mt-5">
@@ -109,7 +149,10 @@ const Profile = () => {
                   }}
                 />
               ) : (
-                <FaUserAlt size={80} className="text-secondary" />
+                <>
+                  {console.log("No photoUrl found, using default icon.")}
+                  <FaUserAlt size={80} className="text-secondary" />
+                </>
               )}
             </div>
             <h3 className="fw-bold">{user.name}</h3>
@@ -142,6 +185,21 @@ const Profile = () => {
                     Remove Photo
                   </li>
                 )}
+                <li>
+                  <input
+                    type="text"
+                    value={newName}
+                    onChange={(e) => setNewName(e.target.value)}
+                    placeholder="New name"
+                    className="form-control my-2"
+                  />
+                  <button
+                    className="btn btn-outline-primary btn-sm"
+                    onClick={updateName}
+                  >
+                    Update Name
+                  </button>
+                </li>
               </ul>
             </div>
           </div>
@@ -155,7 +213,7 @@ const Profile = () => {
             <h4>There are no ads published by this user</h4>
           )}
           <div className="row">
-            {ads?.map((ad) => (
+            {ads.map((ad) => (
               <div key={ad.id} className="col-sm-6 col-md-4 mb-3">
                 <AdCard ad={ad} />
               </div>
