@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { AiOutlineHeart, AiFillHeart } from "react-icons/ai";
+import { AiOutlineStar, AiFillStar } from "react-icons/ai"; // Changed to star icons
 import Moment from "react-moment";
 import { doc, onSnapshot, updateDoc } from "firebase/firestore";
 import { db, auth } from "../firebaseConfig";
@@ -13,13 +13,13 @@ const AdCard = ({ ad }) => {
   useEffect(() => {
     const docRef = doc(db, "favorites", ad.id);
     const unsub = onSnapshot(docRef, (querySnapshot) =>
-      setUsers(querySnapshot.data()?.users || []) // Use optional chaining here
+      setUsers(querySnapshot.data()?.users || [])
     );
     return () => unsub();
-  }, [ad.id]); // Ensure ad.id is included in the dependency array
+  }, [ad.id]);
 
   const toggleFavorite = async () => {
-    let isFav = users.includes(auth.currentUser.uid);
+    const isFav = users.includes(auth.currentUser.uid);
 
     await updateDoc(doc(db, "favorites", ad.id), {
       users: isFav
@@ -28,45 +28,39 @@ const AdCard = ({ ad }) => {
     });
   };
 
-  console.log(users);
-
   return (
-    <div className="card">
+    <div className="card mb-3 shadow-sm border-0">
       <Link to={adLink}>
         <img
-          src={ad.images?.[0]?.url || 'default-image-url.jpg'} // Use optional chaining
+          src={ad.images?.[0]?.url || 'default-image-url.jpg'}
           alt={ad.title}
           className="card-img-top"
-          style={{ width: "100%", height: "200px" }}
+          style={{ width: "100%", height: "200px", borderRadius: '0.25rem' }}
         />
       </Link>
       <div className="card-body">
-        <p className="d-flex justify-content-between align-items-center">
-          <small>{ad.category}</small>
+        <div className="d-flex justify-content-between align-items-center">
+          <h5 className="card-title">{ad.title}</h5>
           {users?.includes(auth.currentUser?.uid) ? (
-            <AiFillHeart
+            <AiFillStar
               size={30}
               onClick={toggleFavorite}
-              className="text-danger"
+              className="text-warning cursor-pointer" // Change color to yellow for filled star
             />
           ) : (
-            <AiOutlineHeart
+            <AiOutlineStar
               size={30}
               onClick={toggleFavorite}
-              className="text-danger"
+              className="text-muted cursor-pointer" // Change color to gray for outline star
             />
           )}
+        </div>
+        <p className="small text-muted">{ad.category}</p> {/* Display category below title */}
+        <p className="card-text">
+          {ad.location} - <Moment fromNow>{ad.publishedAt.toDate()}</Moment>
+          <br />
+          BDT. {Number(ad.price).toLocaleString()}
         </p>
-        <Link to={adLink}>
-          <h5 className="card-title">{ad.title}</h5>
-        </Link>
-        <Link to={adLink}>
-          <p className="card-text">
-            {ad.location} - <Moment fromNow>{ad.publishedAt.toDate()}</Moment>
-            <br />
-            BDT. {Number(ad.price).toLocaleString()}
-          </p>
-        </Link>
       </div>
     </div>
   );

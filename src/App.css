@@ -1,118 +1,43 @@
-/* Form styling */
-.form {
-  max-width: 576px;
-  margin: auto;
+/* General card styling for AdCard */
+.card {
+  background-color: #ffffff; /* White background for cards */
+  border-radius: 10px; /* Rounded corners */
+  padding: 15px; /* Padding inside the card */
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); /* Subtle shadow effect */
+  transition: transform 0.3s ease; /* Smooth hover effect */
 }
 
-/* Pulse effect for the brand logo */
-.pulse-logo {
-  animation: pulse 2s infinite;
+.card:hover {
+  transform: translateY(-5px); /* Lift effect on hover */
 }
 
-@keyframes pulse {
-  0% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.1);
-  }
-  100% {
-    transform: scale(1);
-  }
+/* Card image styling */
+.card-img-top {
+  border-radius: 10px; /* Rounded corners for images */
+  object-fit: cover; /* Ensures image fits nicely */
+  height: 200px; /* Fixed height */
 }
 
-/* Rotate effect on hover for buttons or links */
-.rotate-on-hover {
-  transition: transform 0.3s ease-in-out;
+/* Title styling */
+.card-title {
+  font-size: 1.25rem; /* Increase title font size */
+  font-weight: bold; /* Bold font weight */
+  color: #333; /* Dark text color */
 }
 
-.rotate-on-hover:hover {
-  transform: rotate(360deg);
+/* Category text styling */
+.card-text {
+  font-size: 0.875rem; /* Slightly smaller font size for additional text */
+  color: #666; /* Lighter color for better contrast */
 }
 
-/* Profile page styling */
-.profile-card {
-  background-color: #ffffff;
-  border-radius: 10px;
-  padding: 20px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  transition: transform 0.3s ease;
-}
-
-.profile-card:hover {
-  transform: translateY(-5px);
-}
-
-.profile-image {
-  position: relative;
-  margin-bottom: 20px;
-}
-
-.profile-image img {
-  width: 150px;
-  height: 150px;
-  border-radius: 50%;
-  object-fit: cover;
-  border: 3px solid #007bff;
-  transition: all 0.3s ease-in-out;
-}
-
-.profile-image img:hover {
-  transform: scale(1.05);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
-
-.profile-image .text-secondary {
-  font-size: 80px;
-}
-
-.dropdown-toggle {
-  transition: background-color 0.2s ease;
-}
-
-.dropdown-toggle:hover {
-  background-color: #007bff;
-  color: white;
-}
-
-/* Profile details section */
-.profile-details {
-  margin-top: 20px;
-}
-
-.profile-details h4 {
-  font-size: 24px;
-  font-weight: 700;
-  color: #333;
-}
-
-.profile-details hr {
-  border-top: 1px solid #ddd;
-}
-
-.profile-details p {
-  font-size: 16px;
-  color: #555;
-}
-
-/* Card styling for anchor links */
-.card a {
-  text-decoration: none;
-  color: inherit;
-}
-
-/* No products message styling */
-h4 {
-  text-align: center;
-}
-
-/* Ripple effect */
+/* Ripple effect for buttons */
 .button {
   position: relative;
   overflow: hidden;
   padding: 10px 20px;
   color: white;
-  background-color: #007bff;
+  background-color: #007bff; /* Primary button color */
   border: none;
   border-radius: 5px;
   cursor: pointer;
@@ -153,4 +78,102 @@ h4 {
 /* Scale effect on button click */
 .button:active {
   transform: scale(0.95); /* Scale down on click */
+}
+
+/* Profile page styling */
+.profile-card {
+  background-color: #ffffff; /* Same background for consistency */
+  border-radius: 10px;
+  padding: 20px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease;
+}
+
+.profile-card:hover {
+  transform: translateY(-5px); /* Lift effect on hover */
+}
+
+/* Profile image styles */
+.profile-image {
+  position: relative;
+  margin-bottom: 20px;
+}
+
+.profile-image img {
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid #007bff; /* Primary color border */
+  transition: all 0.3s ease-in-out;
+}
+
+.profile-image img:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.profile-image .text-secondary {
+  font-size: 80px;
+}
+
+/* Dropdown styles */
+.dropdown-toggle {
+  transition: background-color 0.2s ease;
+}
+
+.dropdown-toggle:hover {
+  background-color: #007bff; /* Primary color on hover */
+  color: white; /* White text on hover */
+}
+
+/* Profile details styling */
+.profile-details {
+  margin-top: 20px;
+}
+
+.profile-details h4 {
+  font-size: 24px;
+  font-weight: 700;
+  color: #333;
+}
+
+.profile-details hr {
+  border-top: 1px solid #ddd;
+}
+
+.profile-details p {
+  font-size: 16px;
+  color: #555; /* Slightly lighter text */
+}
+
+/* No products message styling */
+h4 {
+  text-align: center;
+}
+
+/* Pulse effect for the brand logo */
+.pulse-logo {
+  animation: pulse 2s infinite; /* Pulsing animation for logo */
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* Rotate effect on hover for buttons or links */
+.rotate-on-hover {
+  transition: transform 0.3s ease-in-out; /* Smooth transition */
+}
+
+.rotate-on-hover:hover {
+  transform: rotate(360deg); /* Full rotation on hover */
 }
