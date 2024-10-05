@@ -1,12 +1,12 @@
 import React, { useState } from "react";
 import { FaCloudUploadAlt } from "react-icons/fa";
 import { ref, getDownloadURL, uploadBytes } from "firebase/storage";
-import { addDoc, collection, Timestamp } from "firebase/firestore";
+import { addDoc, collection, doc, setDoc, Timestamp } from "firebase/firestore";
 import { storage, db, auth } from "../firebaseConfig";
 import { useNavigate } from "react-router-dom";
 
 const categories = ["Vehicle", "Property", "Electronics"];
-const locations = ["Uttara", "Gazipur", "Dhanmondi"];
+const locations = ["Uttara", "Gazipur", "Mirpur"];
 
 const Sell = () => {
   const navigate = useNavigate();
@@ -57,7 +57,7 @@ const Sell = () => {
         }
       }
       // add data into firestore
-      await addDoc(collection(db, "ads"), {
+      const result = await addDoc(collection(db, "ads"), {
         images: imgs,
         title,
         category,
@@ -69,6 +69,10 @@ const Sell = () => {
         publishedAt: Timestamp.fromDate(new Date()),
         postedBy: auth.currentUser.uid,
       });
+
+      await setDoc(doc(db, 'favorites', result.id), {
+        users: []
+      })
 
       setValues({
         images: [],
