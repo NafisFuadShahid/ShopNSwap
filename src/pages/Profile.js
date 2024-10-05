@@ -145,7 +145,7 @@ const Profile = () => {
         <h3>{user.name}</h3>
         <hr />
         {ads.length ? (
-          <h4>Published Ads</h4>
+          <h4>Products</h4>
         ) : (
           <h4>There are no ads published by this user</h4>
         )}

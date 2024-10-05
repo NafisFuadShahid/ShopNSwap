@@ -45,13 +45,27 @@ const Navbar = () => {
             {user ? (
               <>
                 <li className="nav-item">
-                  <Link className="nav-link text-dark rotate-on-hover" to={`/profile/${user.uid}`}>
+                  <Link
+                    className="nav-link text-dark rotate-on-hover"
+                    to={`/profile/${user.uid}`}
+                  >
                     Profile
                   </Link>
                 </li>
                 <li className="nav-item">
-                  <Link className="nav-link text-dark rotate-on-hover" to={`/sell`}>
+                  <Link
+                    className="nav-link text-dark rotate-on-hover"
+                    to={`/sell`}
+                  >
                     Sell
+                  </Link>
+                </li>
+                <li className="nav-item">
+                  <Link
+                    className="nav-link text-dark rotate-on-hover"
+                    to={`/favorites`}
+                  >
+                    My Favorites
                   </Link>
                 </li>
                 <li className="nav-item ms-3">
