@@ -1,14 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import {
-  collection,
   doc,
-  getDocs,
   onSnapshot,
-  orderBy,
-  query,
   updateDoc,
-  where,
 } from "firebase/firestore";
 import {
   deleteObject,
@@ -31,10 +26,6 @@ const Profile = () => {
   const [ads, setAds] = useState([]);
 
   const getUser = async () => {
-    // const docSnap = await getDoc(doc(db, "users", id));
-    // if (docSnap.exists()) {
-    //   setUser(docSnap.data());
-    // }
     const unsub = onSnapshot(doc(db, "users", id), (querySnapshot) =>
       setUser(querySnapshot.data())
     );
@@ -43,16 +34,12 @@ const Profile = () => {
   };
 
   const uploadImage = async () => {
-    // create image reference
     const imgRef = ref(storage, `profile/${Date.now()} - ${img.name}`);
     if (user.photoUrl) {
       await deleteObject(ref(storage, user.photoPath));
     }
-    // upload image
     const result = await uploadBytes(imgRef, img);
-    // get download url
     const url = await getDownloadURL(ref(storage, result.ref.fullPath));
-    // update user doc
     await updateDoc(doc(db, "users", auth.currentUser.uid), {
       photoUrl: url,
       photoPath: result.ref.fullPath,
@@ -60,32 +47,6 @@ const Profile = () => {
     setImg("");
   };
 
-  const getAds = async () => {
-    // create collection reference
-    const adsRef = collection(db, "ads");
-    // execute query
-    const q = query(
-      adsRef,
-      where("postedBy", "==", id),
-      orderBy("publishedAt", "desc")
-    );
-    // get data from firestore
-    const docs = await getDocs(q);
-    let ads = [];
-    docs.forEach((doc) => {
-      ads.push({ ...doc.data(), id: doc.id });
-    });
-    setAds(ads);
-  };
-
-  useEffect(() => {
-    getUser();
-    if (img) {
-      uploadImage();
-    }
-    getAds();
-  }, [img]);
-  console.log(ads);
   const deletePhoto = async () => {
     const confirm = window.confirm("Delete photo permanently?");
     if (confirm) {
@@ -97,64 +58,84 @@ const Profile = () => {
     }
   };
 
-  return user ? (
-    <div className="mt-5 container row">
-      <div className="text-center col-sm-2 col-md-3">
-        {user.photoUrl ? (
-          <img
-            src={user.photoUrl}
-            alt={user.name}
-            style={{ widht: "100px", height: "100px", borderRadius: "50%" }}
-          />
-        ) : (
-          <FaUserAlt size={50} />
-        )}
+  useEffect(() => {
+    getUser();
+    if (img) {
+      uploadImage();
+    }
+  }, [img]);
 
-        <div className="dropdown my-3 text-center">
-          <button
-            className="btn btn-secondary btn-sm dropdown-toggle"
-            type="button"
-            data-bs-toggle="dropdown"
-            aria-expanded="false"
-          >
-            Edit
-          </button>
-          <ul className="dropdown-menu">
-            <li>
-              <label htmlFor="photo" className="dropdown-item">
-                <FaCloudUploadAlt size={30} /> Upload Photo
-              </label>
-              <input
-                type="file"
-                id="photo"
-                accept="image/*"
-                style={{ display: "none" }}
-                onChange={(e) => setImg(e.target.files[0])}
-              />
-            </li>
-            {user.photoUrl ? (
-              <li className="dropdown-item btn" onClick={deletePhoto}>
-                Remove Photo
-              </li>
-            ) : null}
-          </ul>
-        </div>
-        <p>Member since {monthAndYear(user.createdAt.toDate())}</p>
-      </div>
-      <div className="col-sm-10 col-md-9">
-        <h3>{user.name}</h3>
-        <hr />
-        {ads.length ? (
-          <h4>Products</h4>
-        ) : (
-          <h4>There are no ads published by this user</h4>
-        )}
-        <div className="row">
-          {ads?.map((ad) => (
-            <div key={ad.id} className="col-sm-6 col-md-4 mb-3">
-              <AdCard ad={ad} />
+  return user ? (
+    <div className="container mt-5">
+      <div className="row justify-content-center">
+        <div className="col-md-6 text-center">
+          <div className="profile-card shadow p-4 rounded">
+            <div className="profile-image mb-3">
+              {user.photoUrl ? (
+                <img
+                  src={user.photoUrl}
+                  alt={user.name}
+                  className="rounded-circle"
+                  style={{
+                    width: "150px",
+                    height: "150px",
+                    objectFit: "cover",
+                    border: "2px solid #007bff",
+                  }}
+                />
+              ) : (
+                <FaUserAlt size={80} className="text-secondary" />
+              )}
             </div>
-          ))}
+            <h3 className="fw-bold">{user.name}</h3>
+            <p className="text-muted">Member since {monthAndYear(user.createdAt.toDate())}</p>
+
+            <div className="dropdown my-3">
+              <button
+                className="btn btn-outline-primary btn-sm dropdown-toggle"
+                type="button"
+                data-bs-toggle="dropdown"
+                aria-expanded="false"
+              >
+                Edit Profile
+              </button>
+              <ul className="dropdown-menu">
+                <li>
+                  <label htmlFor="photo" className="dropdown-item">
+                    <FaCloudUploadAlt size={20} /> Upload Photo
+                  </label>
+                  <input
+                    type="file"
+                    id="photo"
+                    accept="image/*"
+                    style={{ display: "none" }}
+                    onChange={(e) => setImg(e.target.files[0])}
+                  />
+                </li>
+                {user.photoUrl && (
+                  <li className="dropdown-item text-danger" onClick={deletePhoto}>
+                    Remove Photo
+                  </li>
+                )}
+              </ul>
+            </div>
+          </div>
+        </div>
+        <div className="col-md-8 mt-4 text-start">
+          <h4 className="fw-bold">Profile Details</h4>
+          <hr />
+          {ads.length ? (
+            <h4 className="fw-bold">Products</h4>
+          ) : (
+            <h4>There are no products listed yet.</h4>
+          )}
+          <div className="row">
+            {ads.map((ad) => (
+              <div key={ad.id} className="col-sm-6 col-md-4 mb-3">
+                <AdCard ad={ad} />
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </div>

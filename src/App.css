@@ -95,13 +95,13 @@
   color: #555;
 }
 
-.form {
-  max-width: 576px;
-  margin: auto;
-}
-
+/* Card styling for anchor links */
 .card a {
   text-decoration: none;
   color: inherit;
 }
 
+/* No products message styling */
+h4 {
+  text-align: center;
+}
