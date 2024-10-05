@@ -59,7 +59,9 @@ const AdCard = ({ ad }) => {
         <p className="card-text">
           {ad.location} - <Moment fromNow>{ad.publishedAt.toDate()}</Moment>
           <br />
-          BDT. {Number(ad.price).toLocaleString()}
+          <span style={{ fontWeight: "500", fontSize: "1rem", color: "#333" }}>
+            {Number(ad.price).toLocaleString()} BDT
+          </span>
         </p>
       </div>
     </div>

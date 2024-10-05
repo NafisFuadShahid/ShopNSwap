@@ -5,7 +5,27 @@ import { addDoc, collection, doc, setDoc, Timestamp } from "firebase/firestore";
 import { storage, db, auth } from "../firebaseConfig";
 import { useNavigate } from "react-router-dom";
 
-const categories = ["Vehicle", "Property", "Electronics"];
+const categories = [
+  "Vehicles", 
+  "Property", 
+  "Electronics", 
+  "Home & Garden", 
+  "Fashion & Beauty", 
+  "Jobs", 
+  "Services", 
+  "Pets", 
+  "Sports & Outdoors", 
+  "Hobbies & Leisure", 
+  "Kids & Baby Products", 
+  "Business & Industrial", 
+  "Health & Wellness", 
+  "Education", 
+  "Travel & Tourism", 
+  "Events", 
+  "Agriculture & Farming", 
+  "Others"
+];
+
 const locations = ["Uttara", "Gazipur", "Mirpur"];
 
 const Sell = () => {
@@ -17,6 +37,7 @@ const Sell = () => {
     category: "",
     price: "",
     location: "",
+    address: "", // Added address here
     contact: "",
     description: "",
     error: "",
@@ -31,6 +52,7 @@ const Sell = () => {
     category,
     price,
     location,
+    address, // Destructure address
     contact,
     description,
     error,
@@ -56,16 +78,15 @@ const Sell = () => {
     e.preventDefault();
 
     // Validation: Check if required fields are filled
-    if (!title || !category || !price || !location || !contact) {
+    if (!title || !category || !price || !location || !address || !contact) {
       setValues({ ...values, error: "All fields except description are required.", loading: false });
-      return; // Exit if validation fails
+      return;
     }
 
     setValues({ ...values, error: "", loading: true });
 
     try {
       let imgs = [];
-      // Loop through images
       if (images.length) {
         for (let image of images) {
           const imgRef = ref(storage, `ads/${Date.now()} - ${image.name}`);
@@ -82,6 +103,7 @@ const Sell = () => {
         category,
         price,
         location,
+        address, // Save address here
         contact,
         description,
         isSold: false,
@@ -100,6 +122,7 @@ const Sell = () => {
         category: "",
         price: "",
         location: "",
+        address: "",
         contact: "",
         description: "",
         loading: false,
@@ -112,7 +135,11 @@ const Sell = () => {
   };
 
   return (
-    <form className="form shadow rounded p-3 mt-5" onSubmit={handleSubmit}>
+    <form
+      className="form shadow rounded p-3 mt-5"
+      style={{ maxWidth: "600px", margin: "0 auto" }} // Restrict form width
+      onSubmit={handleSubmit}
+    >
       <h3 className="text-center mb-3">Create An Ad</h3>
       <div className="mb-3 text-center">
         <label htmlFor="image">
@@ -193,6 +220,19 @@ const Sell = () => {
           ))}
         </select>
       </div>
+
+      {/* Address Field */}
+      <div className="mb-3">
+        <label className="form-label">Address</label>
+        <input
+          type="text"
+          className="form-control"
+          name="address"
+          value={address}
+          onChange={handleChange}
+        />
+      </div>
+
       <div className="mb-3">
         <label className="form-label">Contact</label>
         <input
