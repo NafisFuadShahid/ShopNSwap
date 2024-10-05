@@ -1,9 +1,9 @@
 import { signOut } from "firebase/auth";
-import { doc, updateDoc } from "firebase/firestore";
-import React, { useContext } from "react";
+import { doc, updateDoc, getDoc } from "firebase/firestore"; // Importing getDoc to fetch data from Firestore
+import React, { useContext, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { AuthContext } from "../context/auth";
-import { auth, db } from "../firebaseConfig";
+import { auth, db } from "../firebaseConfig"; // Assuming auth and db are already set up
 import { Dropdown } from "react-bootstrap";
 import { FaUserAlt } from "react-icons/fa"; // Importing the icon
 import 'bootstrap/dist/css/bootstrap.min.css';
@@ -11,6 +11,22 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 const Navbar = () => {
   const { user } = useContext(AuthContext);
   const navigate = useNavigate();
+  const [photoUrl, setPhotoUrl] = useState(null); // State to hold the photo URL
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      if (user) {
+        const userDocRef = doc(db, "users", user.uid);
+        const userDocSnap = await getDoc(userDocRef);
+        if (userDocSnap.exists()) {
+          const userData = userDocSnap.data();
+          setPhotoUrl(userData.photoUrl); // Set the photo URL from Firestore
+        }
+      }
+    };
+
+    fetchUserData();
+  }, [user]);
 
   const handleSignout = async () => {
     const confirm = window.confirm("Are you sure you want to log out?");
@@ -51,16 +67,16 @@ const Navbar = () => {
                       variant="light"
                       className="d-flex align-items-center border-0 bg-transparent"
                     >
-                      {user.photoUrl ? (
+                      {photoUrl ? (
                         <img
-                          src={user.photoUrl}
+                          src={photoUrl}
                           alt={user.name || "Profile Avatar"}
                           className="rounded-circle"
                           style={{
-                            width: "30px",
-                            height: "30px",
+                            width: "40px",
+                            height: "40px",
                             objectFit: "cover",
-                            border: "2px solid #ddd",
+                            
                           }}
                         />
                       ) : (
