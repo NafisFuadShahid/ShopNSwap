@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { auth, db } from "../../firebaseConfig";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { doc, updateDoc } from "firebase/firestore";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, replace } from "react-router-dom";
 
 const Login = () => {
   const [values, setValues] = useState({
@@ -43,7 +43,7 @@ const Login = () => {
         loading: false,
       });
 
-      navigate("/");
+      navigate("/", { replace: true });
     } catch (error) {
       setValues({ ...values, error: error.message, loading: false });
     }
