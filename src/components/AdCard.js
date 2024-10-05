@@ -13,10 +13,10 @@ const AdCard = ({ ad }) => {
   useEffect(() => {
     const docRef = doc(db, "favorites", ad.id);
     const unsub = onSnapshot(docRef, (querySnapshot) =>
-      setUsers(querySnapshot.data().users)
+      setUsers(querySnapshot.data()?.users || []) // Use optional chaining here
     );
     return () => unsub();
-  }, []);
+  }, [ad.id]); // Ensure ad.id is included in the dependency array
 
   const toggleFavorite = async () => {
     let isFav = users.includes(auth.currentUser.uid);
@@ -24,7 +24,7 @@ const AdCard = ({ ad }) => {
     await updateDoc(doc(db, "favorites", ad.id), {
       users: isFav
         ? users.filter((id) => id !== auth.currentUser.uid)
-        : users.concat(auth.currentUser.uid),
+        : [...users, auth.currentUser.uid],
     });
   };
 
@@ -34,7 +34,7 @@ const AdCard = ({ ad }) => {
     <div className="card">
       <Link to={adLink}>
         <img
-          src={ad.images[0].url}
+          src={ad.images?.[0]?.url || 'default-image-url.jpg'} // Use optional chaining
           alt={ad.title}
           className="card-img-top"
           style={{ width: "100%", height: "200px" }}
