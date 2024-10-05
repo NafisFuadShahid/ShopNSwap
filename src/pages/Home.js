@@ -65,6 +65,7 @@ const Home = () => {
 
   return (
     <div className="mt-5 container">
+      
       <style>
         {`
           .category-container {
