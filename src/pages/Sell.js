@@ -55,6 +55,12 @@ const Sell = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    // Validation: Check if required fields are filled
+    if (!title || !category || !price || !location || !contact) {
+      setValues({ ...values, error: "All fields except description are required.", loading: false });
+      return; // Exit if validation fails
+    }
+
     setValues({ ...values, error: "", loading: true });
 
     try {
