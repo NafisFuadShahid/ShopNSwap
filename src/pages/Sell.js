@@ -6,24 +6,10 @@ import { storage, db, auth } from "../firebaseConfig";
 import { useNavigate } from "react-router-dom";
 
 const categories = [
-  "Vehicles", 
-  "Property", 
-  "Electronics", 
-  "Home & Garden", 
-  "Fashion & Beauty", 
-  "Jobs", 
-  "Services", 
-  "Pets", 
-  "Sports & Outdoors", 
-  "Hobbies & Leisure", 
-  "Kids & Baby Products", 
-  "Business & Industrial", 
-  "Health & Wellness", 
-  "Education", 
-  "Travel & Tourism", 
-  "Events", 
-  "Agriculture & Farming", 
-  "Others"
+  "Vehicles", "Property", "Electronics", "Home & Garden", "Fashion & Beauty",
+  "Jobs", "Services", "Pets", "Sports & Outdoors", "Hobbies & Leisure",
+  "Kids & Baby Products", "Business & Industrial", "Health & Wellness",
+  "Education", "Travel & Tourism", "Events", "Agriculture & Farming", "Others"
 ];
 
 const locations = ["Uttara", "Gazipur", "Mirpur"];
@@ -37,7 +23,7 @@ const Sell = () => {
     category: "",
     price: "",
     location: "",
-    address: "", // Added address here
+    address: "",
     contact: "",
     description: "",
     error: "",
@@ -45,41 +31,40 @@ const Sell = () => {
   });
 
   const [imagePreviews, setImagePreviews] = useState([]);
+  const [errors, setErrors] = useState({});  // Tracks which fields are missing
 
-  const {
-    images,
-    title,
-    category,
-    price,
-    location,
-    address, // Destructure address
-    contact,
-    description,
-    error,
-    loading,
-  } = values;
+  const { images, title, category, price, location, address, contact, description, error, loading } = values;
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setValues({ ...values, [name]: value });
 
-    // Handle image file selection
     if (name === "images") {
       const selectedFiles = Array.from(e.target.files);
       setValues({ ...values, images: selectedFiles });
 
-      // Create image previews
       const previews = selectedFiles.map((file) => URL.createObjectURL(file));
       setImagePreviews(previews);
     }
+
+    // Clear field-specific errors when the user types in that field
+    setErrors({ ...errors, [name]: "" });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Validation: Check if required fields are filled
-    if (!title || !category || !price || !location || !address || !contact) {
-      setValues({ ...values, error: "All fields except description are required.", loading: false });
+    const newErrors = {};
+    if (!title) newErrors.title = "Title is required";
+    if (!category) newErrors.category = "Category is required";
+    if (!price) newErrors.price = "Price is required";
+    if (!location) newErrors.location = "Location is required";
+    if (!address) newErrors.address = "Address is required";
+    if (!contact) newErrors.contact = "Contact is required";
+
+    // If there are errors, stop the form submission
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
       return;
     }
 
@@ -96,14 +81,14 @@ const Sell = () => {
           imgs.push({ url: fileUrl, path: result.ref.fullPath });
         }
       }
-      // Add data into Firestore
+
       const result = await addDoc(collection(db, "ads"), {
         images: imgs,
         title,
         category,
         price,
         location,
-        address, // Save address here
+        address,
         contact,
         description,
         isSold: false,
@@ -111,11 +96,8 @@ const Sell = () => {
         postedBy: auth.currentUser.uid,
       });
 
-      await setDoc(doc(db, 'favorites', result.id), {
-        users: []
-      });
+      await setDoc(doc(db, 'favorites', result.id), { users: [] });
 
-      // Reset form values
       setValues({
         images: [],
         title: "",
@@ -127,7 +109,7 @@ const Sell = () => {
         description: "",
         loading: false,
       });
-      setImagePreviews([]); // Clear previews
+      setImagePreviews([]);
       navigate("/");
     } catch (error) {
       setValues({ ...values, error: error.message, loading: false });
@@ -135,132 +117,162 @@ const Sell = () => {
   };
 
   return (
-    <form
-      className="form shadow rounded p-3 mt-5"
-      style={{ maxWidth: "600px", margin: "0 auto" }} // Restrict form width
-      onSubmit={handleSubmit}
-    >
-      <h3 className="text-center mb-3">Create An Ad</h3>
-      <div className="mb-3 text-center">
-        <label htmlFor="image">
-          <div className="btn btn-secondary btn-sm">
-            <FaCloudUploadAlt size={30} /> Upload Image
+    <div className="container py-5">
+      <div className="card shadow-lg p-5 rounded-3">
+        <h2 className="text-center mb-4">Create Your Ad</h2>
+
+        <form onSubmit={handleSubmit} className="row g-3">
+          {/* Image Upload Section */}
+          <div className="col-12 text-center">
+            <label htmlFor="image" className="btn btn-outline-secondary">
+              <FaCloudUploadAlt size={24} className="me-2" />
+              Upload Images
+            </label>
+            <input
+              type="file"
+              id="image"
+              style={{ display: "none" }}
+              accept="image/*"
+              multiple
+              onChange={handleChange}
+              name="images"
+            />
           </div>
-        </label>
-        <input
-          type="file"
-          id="image"
-          style={{ display: "none" }}
-          accept="image/*"
-          multiple
-          onChange={handleChange}
-          name="images"
-        />
-      </div>
-      
-      {/* Image Preview Section */}
-      <div className="mb-3 text-center">
-        {imagePreviews.length > 0 && (
-          <div className="image-preview-container">
-            {imagePreviews.map((preview, index) => (
-              <img
-                key={index}
-                src={preview}
-                alt={`Preview ${index + 1}`}
-                style={{
-                  width: "100px",
-                  height: "100px",
-                  objectFit: "cover",
-                  margin: "5px",
-                  borderRadius: "5px",
-                }}
-              />
-            ))}
+
+          {/* Image Preview Section */}
+          <div className="col-12 text-center">
+            {imagePreviews.length > 0 && (
+              <div className="d-flex justify-content-center flex-wrap mb-3">
+                {imagePreviews.map((preview, index) => (
+                  <img
+                    key={index}
+                    src={preview}
+                    alt={`Preview ${index + 1}`}
+                    className="img-thumbnail m-2"
+                    style={{ width: "100px", height: "100px", objectFit: "cover" }}
+                  />
+                ))}
+              </div>
+            )}
           </div>
-        )}
-      </div>
 
-      <div className="mb-3">
-        <label className="form-label">Title</label>
-        <input
-          type="text"
-          className="form-control"
-          name="title"
-          value={title}
-          onChange={handleChange}
-        />
-      </div>
-      <div className="mb-3">
-        <select name="category" className="form-select" onChange={handleChange}>
-          <option value="">Select Category</option>
-          {categories.map((category) => (
-            <option value={category} key={category}>
-              {category}
-            </option>
-          ))}
-        </select>
-      </div>
-      <div className="mb-3">
-        <label className="form-label">Price</label>
-        <input
-          type="number"
-          className="form-control"
-          name="price"
-          value={price}
-          onChange={handleChange}
-        />
-      </div>
-      <div className="mb-3">
-        <select name="location" className="form-select" onChange={handleChange}>
-          <option value="">Select Location</option>
-          {locations.map((location) => (
-            <option value={location} key={location}>
-              {location}
-            </option>
-          ))}
-        </select>
-      </div>
+          {/* Title */}
+          <div className="col-md-6">
+            <label className="form-label fw-bold">Title {errors.title && <span className="text-danger">* {errors.title}</span>}</label>
+            <input
+              type="text"
+              className={`form-control ${errors.title ? "border-danger" : ""}`}
+              name="title"
+              value={title}
+              onChange={handleChange}
+              placeholder="Enter the title of your ad"
+              required
+            />
+          </div>
 
-      {/* Address Field */}
-      <div className="mb-3">
-        <label className="form-label">Address</label>
-        <input
-          type="text"
-          className="form-control"
-          name="address"
-          value={address}
-          onChange={handleChange}
-        />
-      </div>
+          {/* Category */}
+          <div className="col-md-6">
+            <label className="form-label fw-bold">Category {errors.category && <span className="text-danger">* {errors.category}</span>}</label>
+            <select
+              name="category"
+              className={`form-select ${errors.category ? "border-danger" : ""}`}
+              onChange={handleChange}
+              required
+            >
+              <option value="">Select Category</option>
+              {categories.map((category) => (
+                <option value={category} key={category}>
+                  {category}
+                </option>
+              ))}
+            </select>
+          </div>
 
-      <div className="mb-3">
-        <label className="form-label">Contact</label>
-        <input
-          type="text"
-          className="form-control"
-          name="contact"
-          value={contact}
-          onChange={handleChange}
-        />
+          {/* Price */}
+          <div className="col-md-6">
+            <label className="form-label fw-bold">Price {errors.price && <span className="text-danger">* {errors.price}</span>}</label>
+            <input
+              type="number"
+              className={`form-control ${errors.price ? "border-danger" : ""}`}
+              name="price"
+              value={price}
+              onChange={handleChange}
+              placeholder="Enter price"
+              required
+            />
+          </div>
+
+          {/* Location */}
+          <div className="col-md-6">
+            <label className="form-label fw-bold">Location {errors.location && <span className="text-danger">* {errors.location}</span>}</label>
+            <select
+              name="location"
+              className={`form-select ${errors.location ? "border-danger" : ""}`}
+              onChange={handleChange}
+              required
+            >
+              <option value="">Select Location</option>
+              {locations.map((location) => (
+                <option value={location} key={location}>
+                  {location}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Address */}
+          <div className="col-md-12">
+            <label className="form-label fw-bold">Address {errors.address && <span className="text-danger">* {errors.address}</span>}</label>
+            <input
+              type="text"
+              className={`form-control ${errors.address ? "border-danger" : ""}`}
+              name="address"
+              value={address}
+              onChange={handleChange}
+              placeholder="Enter address"
+              required
+            />
+          </div>
+
+          {/* Contact */}
+          <div className="col-md-12">
+            <label className="form-label fw-bold">Contact {errors.contact && <span className="text-danger">* {errors.contact}</span>}</label>
+            <input
+              type="text"
+              className={`form-control ${errors.contact ? "border-danger" : ""}`}
+              name="contact"
+              value={contact}
+              onChange={handleChange}
+              placeholder="Enter contact information"
+              required
+            />
+          </div>
+
+          {/* Description */}
+          <div className="col-md-12">
+            <label className="form-label fw-bold">Description</label>
+            <textarea
+              className="form-control"
+              name="description"
+              value={description}
+              onChange={handleChange}
+              placeholder="Enter a description for your ad"
+              rows="3"
+            ></textarea>
+          </div>
+
+          {/* Error Message */}
+          {error && <p className="text-center text-danger">{error}</p>}
+
+          {/* Submit Button */}
+          <div className="col-12 text-center">
+            <button className="btn btn-primary" type="submit" disabled={loading}>
+              {loading ? "Creating..." : "Create Ad"}
+            </button>
+          </div>
+        </form>
       </div>
-      <div className="mb-3">
-        <label className="form-label">Description</label>
-        <textarea
-          name="description"
-          cols="30"
-          rows="3"
-          className="form-control"
-          value={description}
-          onChange={handleChange}
-        ></textarea>
-      </div>
-      {error ? <p className="text-center text-danger">{error}</p> : null}
-      <div className="mb-3 text-center">
-        <button className="btn btn-secondary btn-sm" disabled={loading}>
-          Create
-        </button>
-      </div>
-    </form>
+    </div>
   );
 };
 
