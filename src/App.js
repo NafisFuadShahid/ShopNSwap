@@ -11,8 +11,8 @@ import AuthProvider from "./context/auth";
 import PrivateRoute from "./components/PrivateRoute";
 import Sell from "./pages/Sell";
 import MyFavorites from "./pages/MyFavorites";
-import Ad from "./pages/Ad"
-import Footer from "./components/Footer";
+import Ad from "./pages/Ad";
+import Footer from "./components/Footer"; // Import the Footer component
 
 function App() {
   return (
@@ -32,6 +32,7 @@ function App() {
           <Route path="/:category/:id" element={<Ad />} />
           <Route path="/" element={<Home />} />
         </Routes>
+        {/* <Footer /> Include the Footer here to ensure it shows on all pages */}
       </BrowserRouter>
     </AuthProvider>
   );
