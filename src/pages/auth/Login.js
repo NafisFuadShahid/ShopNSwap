@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { auth, db } from "../../firebaseConfig";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { doc, updateDoc } from "firebase/firestore";
-import { useNavigate, Link, replace } from "react-router-dom";
+import { useNavigate, Link, useLocation } from "react-router-dom";
 
 const Login = () => {
   const [values, setValues] = useState({
@@ -13,12 +13,16 @@ const Login = () => {
   });
 
   const navigate = useNavigate();
+  const location = useLocation();
 
   const { email, password, error, loading } = values;
 
   const handleChange = (e) =>
     setValues({ ...values, [e.target.name]: e.target.value });
 
+
+
+  console.log(location);
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -42,6 +46,12 @@ const Login = () => {
         error: "",
         loading: false,
       });
+      
+      if(location.state?.from){
+        navigate(location.state.from.pathname)
+      } else {
+        navigate("/", {replace: true});
+      }
 
       navigate("/", { replace: true });
     } catch (error) {
