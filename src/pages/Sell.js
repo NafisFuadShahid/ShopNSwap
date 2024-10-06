@@ -165,7 +165,7 @@ const Sell = () => {
               name="title"
               value={title}
               onChange={handleChange}
-              placeholder="Enter the title of your ad"
+              placeholder="Enter the title of your product"
               required
             />
           </div>
@@ -256,7 +256,7 @@ const Sell = () => {
               name="description"
               value={description}
               onChange={handleChange}
-              placeholder="Enter a description for your ad"
+              placeholder="Enter a description for your product"
               rows="3"
             ></textarea>
           </div>
