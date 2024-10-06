@@ -123,13 +123,12 @@ const Ad = () => {
                   <AiFillStar
                     size={30}
                     onClick={() => toggleFavorite(val.users, id)}
-                    className="text-danger"
+                    className="text-warning cursor-pointer" // Yellow color for filled star
                   />
                 ) : (
                   <AiOutlineStar
                     size={30}
                     onClick={() => toggleFavorite(val.users, id)}
-                    className="text-danger"
                   />
                 )}
               </div>
@@ -143,8 +142,8 @@ const Ad = () => {
                 </p>
                 {ad.postedBy === auth.currentUser?.uid && (
                   <FaTrashAlt
-                    size={20}
-                    className="text-danger"
+                    style={{ height: '20px', width: '30px' }}
+                    // className="text-danger"
                     onClick={deleteAd}
                   />
                 )}
