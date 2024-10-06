@@ -3,7 +3,7 @@ import { useParams, useNavigate, Link, useLocation } from "react-router-dom";
 import { deleteDoc, doc, getDoc, updateDoc } from "firebase/firestore";
 import { auth, db, storage } from "../firebaseConfig";
 import { ref, deleteObject } from "firebase/storage";
-import { AiOutlineHeart, AiFillHeart } from "react-icons/ai";
+import { AiOutlineHeart, AiFillHeart, AiFillStar, AiOutlineStar } from "react-icons/ai";
 import { FaTrashAlt, FaUserCircle } from "react-icons/fa";
 import { FiPhoneCall } from "react-icons/fi";
 import Moment from "react-moment";
@@ -40,21 +40,16 @@ const Ad = () => {
   useEffect(() => {
     getAd();
   }, []);
-  console.log(ad);
 
   const deleteAd = async () => {
     const confirm = window.confirm(`Delete ${ad.title}?`);
     if (confirm) {
-      // delete images
       for (const image of ad.images) {
         const imgRef = ref(storage, image.path);
         await deleteObject(imgRef);
       }
-      // delete fav doc from firestore
       await deleteDoc(doc(db, "favorites", id));
-      // delete ad doc from firestore
       await deleteDoc(doc(db, "ads", id));
-      // navigate to seller profile
       navigate(`/profile/${auth.currentUser.uid}`);
     }
   };
@@ -68,9 +63,9 @@ const Ad = () => {
 
   return ad ? (
     <div className="mt-5 container">
-      <div className="row">
-        <div id="carouselExample" className="carousel slide col-md-8">
-          {ad.isSold && <Sold singleAd={true} />}
+      <div className="text-center mb-4">
+        {ad.isSold && <Sold singleAd={true} />}
+        <div id="carouselExample" className="carousel slide">
           <div className="carousel-inner">
             {ad.images.map((image, i) => (
               <div
@@ -81,9 +76,8 @@ const Ad = () => {
                   src={image.url}
                   className="d-block w-100"
                   alt={ad.title}
-                  style={{ height: "500px" }}
+                  style={{ maxHeight: "500px", objectFit: "contain" }} // Ensures the image is centered and fits within the bounds
                 />
-
                 <button
                   className="carousel-control-prev"
                   type="button"
@@ -114,21 +108,25 @@ const Ad = () => {
             ))}
           </div>
         </div>
-        <div className="col-md-4">
-          <div className="card">
+      </div>
+
+      <div className="row d-flex align-items-stretch">
+        {/* First card: Price and details */}
+        <div className="col-md-6 d-flex">
+          <div className="card mb-4 h-100 w-100">
             <div className="card-body">
               <div className="d-flex justify-content-between align-items-center">
                 <h5 className="card-title">
                   BDT. {Number(ad.price).toLocaleString()}
                 </h5>
                 {val?.users?.includes(auth.currentUser?.uid) ? (
-                  <AiFillHeart
+                  <AiFillStar
                     size={30}
                     onClick={() => toggleFavorite(val.users, id)}
                     className="text-danger"
                   />
                 ) : (
-                  <AiOutlineHeart
+                  <AiOutlineStar
                     size={30}
                     onClick={() => toggleFavorite(val.users, id)}
                     className="text-danger"
@@ -153,7 +151,11 @@ const Ad = () => {
               </div>
             </div>
           </div>
-          <div className="card mt-3">
+        </div>
+
+        {/* Second card: Seller information */}
+        <div className="col-md-6 d-flex">
+          <div className="card mb-4 h-100 w-100">
             <div className="card-body">
               <h5 className="card-title">Seller Description</h5>
               <Link to={`/profile/${ad.postedBy}`}>
@@ -212,18 +214,9 @@ const Ad = () => {
               )}
             </div>
           </div>
-          <div className="mt-5 text-center">
-            {!ad.isSold && ad.postedBy === auth.currentUser?.uid && (
-              <button
-                className="btn btn-secondary btn-sm"
-                onClick={updateStatus}
-              >
-                Mark as Sold
-              </button>
-            )}
-          </div>
         </div>
       </div>
+
       <div className="mt-5">
         <h3>Description</h3>
         <p>{ad.description}</p>
