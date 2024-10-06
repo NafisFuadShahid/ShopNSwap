@@ -5,6 +5,7 @@ import Moment from "react-moment";
 import { auth } from "../firebaseConfig";
 import useSnapshot from "../utils/useSnapshot";
 import { toggleFavorite } from "../utils/fav";
+import Sold from "./Sold";
 
 const AdCard = ({ ad }) => {
   // Using useSnapshot to get the favorite data
@@ -16,7 +17,8 @@ const AdCard = ({ ad }) => {
   const isFavorite = val?.users?.includes(auth.currentUser?.uid);
 
   return (
-    <div className="card mb-3 shadow-sm border-0">
+    <div className="card mb-3 shadow-sm border-0 relative">
+      {ad.isSold && <Sold />}
       <Link to={adLink}>
         <img
           src={ad.images?.[0]?.url || "default-image-url.jpg"}

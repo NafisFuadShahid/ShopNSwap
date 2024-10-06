@@ -4,6 +4,7 @@ import { db } from "../firebaseConfig";
 import AdCard from "../components/AdCard";
 import { FaChevronRight, FaChevronLeft } from "react-icons/fa"; // Importing left and right arrow icons
 
+
 const categories = [
   "Vehicles",
   "Property",
