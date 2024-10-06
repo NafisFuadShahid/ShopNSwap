@@ -204,9 +204,11 @@ const Home = () => {
                   selectedCategory === category ? "selected-category" : ""
                 }`}
               >
+                
                 <img
-                  src={`/images/category-${index}.png`} // Ensure these images exist in the public folder
-                  onError={(e) => (e.target.src = "/images/default-category.png")} // Fallback image
+                  // changed to placeholder to test image access, change to 'category-${index}.jpg'
+                  src={`src/images/default-category.jpg`} // Ensure these images exist in the public folder
+                  onError={(e) => (e.target.src = "https://static.thenounproject.com/png/2932881-200.png")} // Fallback image
                   alt={category}
                   className="category-image mb-2"
                 />
