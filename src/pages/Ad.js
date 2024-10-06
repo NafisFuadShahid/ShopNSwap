@@ -31,6 +31,11 @@ const Ad = () => {
   console.log(ad);
 
   const deleteAd = async () => {
+    if (ad.postedBy !== auth.currentUser.uid) {
+      alert("You can only delete your own ads.");
+      return;
+    }
+  
     const confirm = window.confirm(`Delete ${ad.title}?`);
     if (confirm) {
       // delete images
@@ -43,7 +48,7 @@ const Ad = () => {
       // delete ad doc from firestore
       await deleteDoc(doc(db, "ads", id));
       // navigate to seller profile
-      navigate(`/profile/${auth.currentUser.uid}`)
+      navigate(`/profile/${auth.currentUser.uid}`);
     }
   };
 
