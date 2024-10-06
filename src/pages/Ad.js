@@ -70,7 +70,7 @@ const Ad = () => {
             <div className="card-body">
               <div className="d-flex justify-content-between align-items-center">
                 <h5 className="card-title">
-                  PKR. {Number(ad.price).toLocaleString()}
+                  BDT. {Number(ad.price).toLocaleString()}
                 </h5>
                 <AiOutlineHeart size={30} />
               </div>
