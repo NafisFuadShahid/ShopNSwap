@@ -28,46 +28,44 @@ const categories = [
 const Home = () => {
   const [ads, setAds] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState(null); // State to store the selected category
-  const [sortOrder, setSortOrder] = useState("desc"); // State to manage the sorting order (price)
+  const [sortOption, setSortOption] = useState("latest"); // Default sort option is "Latest"
   const [showLeftArrow, setShowLeftArrow] = useState(false);
   const [showRightArrow, setShowRightArrow] = useState(true);
   const categoryRef = useRef(null); // Reference to the category container
 
-  // Function to fetch ads from Firestore, optionally filtered by category and sorted by price
-  const getAds = async (category = null, order = "desc") => {
+  // Function to fetch ads from Firestore, optionally filtered by category and sorted by price or publish date
+  const getAds = async (category = null, sortOption = "latest") => {
     const adsRef = collection(db, "ads");
     let q;
 
+    // If category is selected, filter by category
     if (category) {
-      // Query for ads in the selected category, ordered by publish date
-      q = query(
-        adsRef,
-        where("category", "==", category),
-        orderBy("publishedAt", "desc")
-      );
+      q = query(adsRef, where("category", "==", category));
     } else {
-      // Query for all ads, ordered by publish date descending
-      q = query(adsRef, orderBy("publishedAt", "desc"));
+      // Show all ads if no category is selected
+      q = query(adsRef);
     }
 
     const adDocs = await getDocs(q);
     let ads = [];
     adDocs.forEach((doc) => ads.push({ ...doc.data(), id: doc.id }));
 
-    // If there is a selected category, sort the ads by price based on the selected order
-    if (category) {
-      ads = ads.sort((a, b) =>
-        order === "asc" ? a.price - b.price : b.price - a.price
-      );
+    // Sorting logic
+    if (sortOption === "low") {
+      ads.sort((a, b) => a.price - b.price);
+    } else if (sortOption === "high") {
+      ads.sort((a, b) => b.price - a.price);
+    } else if (sortOption === "latest") {
+      ads.sort((a, b) => b.publishedAt - a.publishedAt);
     }
 
     setAds(ads);
   };
 
   useEffect(() => {
-    // Fetch ads whenever the selected category or sort order changes
-    getAds(selectedCategory, sortOrder);
-  }, [selectedCategory, sortOrder]);
+    // Fetch ads whenever the selected category or sort option changes
+    getAds(selectedCategory, sortOption);
+  }, [selectedCategory, sortOption]);
 
   const checkScrollPosition = () => {
     const { scrollLeft, scrollWidth, clientWidth } = categoryRef.current;
@@ -96,11 +94,6 @@ const Home = () => {
       // Otherwise, set the clicked category as the selected one
       setSelectedCategory(category);
     }
-  };
-
-  // Function to toggle sorting order
-  const toggleSortOrder = (order) => {
-    setSortOrder(order);
   };
 
   return (
@@ -159,8 +152,25 @@ const Home = () => {
           .selected-category {
             border: 3px solid blue !important; /* Blue outline for the selected category, with !important to ensure it applies */
           }
-          .sort-buttons {
-            pointer-events: ${selectedCategory ? "auto" : "none"}; /* Disable buttons when no category is selected */
+
+          /* Dropdown Customization */
+          .dropdown-custom {
+            width: 200px; /* Make the dropdown smaller */
+            border-radius: 20px; /* Rounded corners */
+            padding: 8px 12px;
+            background-color: #f1f1f1; /* Light gray background */
+            border: 1px solid #ccc; /* Add a light border */
+            transition: all 0.3s ease; /* Smooth transition */
+          }
+
+          .dropdown-custom:hover {
+            background-color: #e2e2e2; /* Slightly darker on hover */
+            border-color: #888; /* Darker border on hover */
+          }
+
+          .dropdown-custom:focus {
+            outline: none;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1); /* Shadow on focus */
           }
         `}
       </style>
@@ -211,29 +221,23 @@ const Home = () => {
         )}
       </div>
 
-      {/* Sorting Buttons */}
-      <div className="d-flex justify-content-between mb-4 sort-buttons">
-        <button
-          className={`btn btn-outline-primary ${
-            sortOrder === "asc" && selectedCategory ? "active" : ""
-          }`}
-          onClick={() => toggleSortOrder("asc")}
-          disabled={!selectedCategory} // Disable if no category selected
-        >
-          Sort by Price: Low to High
-        </button>
-        <button
-          className={`btn btn-outline-primary ${
-            sortOrder === "desc" && selectedCategory ? "active" : ""
-          }`}
-          onClick={() => toggleSortOrder("desc")}
-          disabled={!selectedCategory} // Disable if no category selected
-        >
-          Sort by Price: High to Low
-        </button>
-      </div>
+      {/* Sorting Dropdown */}
+      {selectedCategory && (
+        <div className="mb-4">
+          <h5>Sort By:</h5>
+          <select
+            className="dropdown-custom"
+            onChange={(e) => setSortOption(e.target.value)}
+            value={sortOption}
+          >
+            <option value="latest">Latest</option>
+            <option value="low">Price: Low to High</option>
+            <option value="high">Price: High to Low</option>
+          </select>
+        </div>
+      )}
 
-      <h3>Recent Listings</h3>
+      <h3>{selectedCategory ? `${selectedCategory} Listings` : "Recent Listings"}</h3>
       <div className="row">
         {ads.map((ad) => (
           <div className="col-sm-6 col-md-4 col-xl-3 mb-3" key={ad.id}>
