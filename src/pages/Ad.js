@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
-import { doc, getDoc } from "firebase/firestore";
-import { db, auth } from "../firebaseConfig"; 
+import { useParams, useNavigate } from "react-router-dom";
+import { deleteDoc, doc, getDoc } from "firebase/firestore";
+import { auth, db, storage } from "../firebaseConfig";
+import { ref, deleteObject } from "firebase/storage";
 import { AiOutlineStar, AiFillStar } from "react-icons/ai";
 import { FaTrashAlt } from "react-icons/fa";
 import Moment from "react-moment";
@@ -10,6 +11,7 @@ import { toggleFavorite } from "../utils/fav";
 
 const Ad = () => {
   const { id } = useParams();
+  const navigate = useNavigate()
   const [ad, setAd] = useState();
   const [idx, setIdx] = useState(0);
 
@@ -27,6 +29,24 @@ const Ad = () => {
     getAd();
   }, []);
   console.log(ad);
+
+  const deleteAd = async () => {
+    const confirm = window.confirm(`Delete ${ad.title}?`);
+    if (confirm) {
+      // delete images
+      for (const image of ad.images) {
+        const imgRef = ref(storage, image.path);
+        await deleteObject(imgRef);
+      }
+      // delete fav doc from firestore
+      await deleteDoc(doc(db, "favorites", id));
+      // delete ad doc from firestore
+      await deleteDoc(doc(db, "ads", id));
+      // navigate to seller profile
+      navigate(`/profile/${auth.currentUser.uid}`)
+    }
+  };
+
   return ad ? (
     <div className="mt-5 container">
       <div className="row">
@@ -98,7 +118,7 @@ const Ad = () => {
                     <Moment fromNow>{ad.publishedAt.toDate()}</Moment>
                   </small>
                 </p>
-                <FaTrashAlt style={{ height: '20px', width: '30px' }} />
+                <FaTrashAlt style={{ height: '20px', width: '30px' }} onClick={deleteAd}/>
               </div>
             </div>
           </div>
