@@ -123,7 +123,12 @@ const Ad = () => {
                     <Moment fromNow>{ad.publishedAt.toDate()}</Moment>
                   </small>
                 </p>
-                <FaTrashAlt style={{ height: '20px', width: '30px' }} onClick={deleteAd}/>
+                {ad.postedBy === auth.currentUser.uid && ( // Conditional rendering
+                 <FaTrashAlt
+                  style={{ height: '20px', width: '30px', cursor: 'pointer' }}
+                  onClick={deleteAd}
+                />
+                )}
               </div>
             </div>
           </div>
