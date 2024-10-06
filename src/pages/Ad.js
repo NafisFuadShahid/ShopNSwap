@@ -1,15 +1,19 @@
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { doc, getDoc } from "firebase/firestore";
-import { db } from "../firebaseConfig";
+import { db, auth } from "../firebaseConfig"; 
 import { AiOutlineStar, AiFillStar } from "react-icons/ai";
 import { FaTrashAlt } from "react-icons/fa";
 import Moment from "react-moment";
+import useSnapshot from "../utils/useSnapshot";
+import { toggleFavorite } from "../utils/fav";
 
 const Ad = () => {
   const { id } = useParams();
   const [ad, setAd] = useState();
   const [idx, setIdx] = useState(0);
+
+  const { val } = useSnapshot("favorites", id);
 
   const getAd = async () => {
     const docRef = doc(db, "ads", id);
@@ -72,7 +76,19 @@ const Ad = () => {
                 <h5 className="card-title">
                   BDT. {Number(ad.price).toLocaleString()}
                 </h5>
-                <AiOutlineStar size={30} />
+                {val?.users?.includes(auth.currentUser?.uid) ? (
+                  <AiFillStar
+                    size={30}
+                    onClick={() => toggleFavorite(val.users, id)}
+                    className="text-warning cursor-pointer"
+                  />
+                ) : (
+                  <AiOutlineStar
+                    size={30}
+                    onClick={() => toggleFavorite(val.users || [], id)}
+                    className="text-muted cursor-pointer"
+                  />
+                )}
               </div>
               <h6 className="card-subtitle mb-2">{ad.title}</h6>
               <div className="d-flex justify-content-between">

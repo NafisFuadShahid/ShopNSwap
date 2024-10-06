@@ -4,7 +4,6 @@ import {
   collection,
   doc,
   getDocs,
-  onSnapshot,
   orderBy,
   query,
   updateDoc,
@@ -20,27 +19,20 @@ import { db, storage, auth } from "../firebaseConfig";
 import { FaUserAlt, FaCloudUploadAlt } from "react-icons/fa";
 import moment from "moment";
 import AdCard from "../components/AdCard";
+import useSnapshot from "../utils/useSnapshot";
 
 const monthAndYear = (date) =>
   `${moment(date).format("MMMM").slice(0, 3)} ${moment(date).format("YYYY")}`;
 
 const Profile = () => {
   const { id } = useParams();
-  const [user, setUser] = useState();
+
   const [img, setImg] = useState("");
   const [ads, setAds] = useState([]);
   const [newName, setNewName] = useState(""); // New state for user name
 
-  // Fetch user data
-  const getUser = async () => {
-    const unsub = onSnapshot(doc(db, "users", id), (querySnapshot) => {
-      const userData = querySnapshot.data();
-      console.log("User data fetched:", userData); // Debugging line
-      setUser(userData);
-    });
+  const { val: user } = useSnapshot("users", id);
 
-    return () => unsub();
-  };
 
   // Upload user image
   const uploadImage = async () => {
@@ -81,7 +73,7 @@ const Profile = () => {
       console.warn("No photo path available for deletion.");
       return; // Exit if there's no photo path
     }
-
+  
     const confirm = window.confirm("Delete photo permanently?");
     if (confirm) {
       try {
@@ -92,13 +84,9 @@ const Profile = () => {
           photoUrl: "",
           photoPath: "",
         });
-        
-        // Update local state to reflect changes
-        setUser((prev) => ({
-          ...prev,
-          photoUrl: "",
-          photoPath: "",
-        }));
+  
+        // Since you are using useSnapshot, the user state will be updated automatically
+        console.log("Photo deleted successfully.");
       } catch (error) {
         console.error("Error deleting photo: ", error);
         alert("There was an error deleting the photo.");
@@ -120,7 +108,7 @@ const Profile = () => {
   };
 
   useEffect(() => {
-    getUser();
+    // getUser();
     getAds();
     if (img) {
       uploadImage();
