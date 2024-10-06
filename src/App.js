@@ -12,6 +12,7 @@ import PrivateRoute from "./components/PrivateRoute";
 import Sell from "./pages/Sell";
 import MyFavorites from "./pages/MyFavorites";
 import Ad from "./pages/Ad"
+import Footer from "./components/Footer";
 
 function App() {
   return (
