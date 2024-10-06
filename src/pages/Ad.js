@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../firebaseConfig";
-import { AiOutlineHeart, AiFillHeart } from "react-icons/ai";
+import { AiOutlineStar, AiFillStar } from "react-icons/ai";
 import { FaTrashAlt } from "react-icons/fa";
 import Moment from "react-moment";
 
@@ -72,7 +72,7 @@ const Ad = () => {
                 <h5 className="card-title">
                   BDT. {Number(ad.price).toLocaleString()}
                 </h5>
-                <AiOutlineHeart size={30} />
+                <AiOutlineStar size={30} />
               </div>
               <h6 className="card-subtitle mb-2">{ad.title}</h6>
               <div className="d-flex justify-content-between">
@@ -82,7 +82,7 @@ const Ad = () => {
                     <Moment fromNow>{ad.publishedAt.toDate()}</Moment>
                   </small>
                 </p>
-                <FaTrashAlt size={20} className="text-danger" />
+                <FaTrashAlt style={{ height: '20px', width: '30px' }} />
               </div>
             </div>
           </div>
