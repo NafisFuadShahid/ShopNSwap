@@ -4,7 +4,6 @@ import { db } from "../firebaseConfig";
 import AdCard from "../components/AdCard";
 import { FaChevronRight, FaChevronLeft } from "react-icons/fa"; // Importing left and right arrow icons
 
-
 const categories = [
   "Vehicles",
   "Property",
@@ -204,10 +203,8 @@ const Home = () => {
                   selectedCategory === category ? "selected-category" : ""
                 }`}
               >
-                
                 <img
-                  // changed to placeholder to test image access, change to 'category-${index}.jpg'
-                  src={`src/images/default-category.jpg`} // Ensure these images exist in the public folder
+                  src={`/images/${category}.jpg`} // Dynamically load images from public/images directory
                   onError={(e) => (e.target.src = "https://static.thenounproject.com/png/2932881-200.png")} // Fallback image
                   alt={category}
                   className="category-image mb-2"
