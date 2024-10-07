@@ -4,7 +4,7 @@ import { deleteDoc, doc, getDoc, updateDoc } from "firebase/firestore";
 import { auth, db, storage } from "../firebaseConfig";
 import { ref, deleteObject } from "firebase/storage";
 import { AiOutlineHeart, AiFillHeart, AiFillStar, AiOutlineStar } from "react-icons/ai";
-import { FaTrashAlt, FaUserCircle } from "react-icons/fa";
+import { FaTrashAlt, FaUserCircle, FaPhoneAlt, FaComments } from "react-icons/fa";
 import { FiPhoneCall } from "react-icons/fi";
 import Moment from "react-moment";
 import useSnapshot from "../utils/useSnapshot";
@@ -185,40 +185,42 @@ const Ad = () => {
                       <FiPhoneCall size={20} /> {ad.contact}
                     </p>
                   ) : (
-                    <button
-                      className="btn btn-secondary btn-sm mb-3"
+                    <div
+                      className="icon-container"
                       onClick={() => setShowNumber(true)}
+                      style={{ cursor: "pointer" }}
                     >
-                      Show Contact Info
-                    </button>
+                      <FaPhoneAlt
+                        size={40}
+                        className="text-primary"
+                        style={{ transition: "transform 0.3s", marginBottom: "10px" }}
+                      />
+                      <p>Show Contact Info</p>
+                    </div>
                   )}
                   <br />
                   {ad.postedBy !== auth.currentUser?.uid && (
-                    <button className="btn btn-secondary btn-sm mb-3">
-                      Chat With Seller
-                    </button>
+                    <div
+                      className="icon-container"
+                      style={{ cursor: "pointer" }}
+                    >
+                      <FaComments
+                        size={40}
+                        className="text-primary"
+                        style={{ transition: "transform 0.3s" }}
+                      />
+                      <p>Chat with Seller</p>
+                    </div>
                   )}
                 </div>
               ) : (
                 <p className="text-center">
-                  <Link
-                    to="/auth/login"
-                    state={{ from: location }}
-                    className="text-primary"
-                  >
-                    Login
-                  </Link>{" "}
-                  to see contact info
+                  Please <Link to="/login">login</Link> to view contact info.
                 </p>
               )}
             </div>
           </div>
         </div>
-      </div>
-
-      <div className="mt-5">
-        <h3>Description</h3>
-        <p>{ad.description}</p>
       </div>
     </div>
   ) : null;
