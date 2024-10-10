@@ -6,6 +6,8 @@ import { AuthContext } from "../context/auth";
 import { auth, db } from "../firebaseConfig";
 import { Dropdown } from "react-bootstrap";
 import { FaUserAlt, FaShoppingCart, FaSearch } from "react-icons/fa";
+import { BiLogOut } from "react-icons/bi"; // Import the logout icon
+import { AiOutlineFileSearch } from "react-icons/ai"; // Import the my orders icon
 import 'bootstrap/dist/css/bootstrap.min.css';
 
 const Navbar = () => {
@@ -129,7 +131,7 @@ const Navbar = () => {
             <div className="input-group" style={{ marginRight: "80px", width: "450px" }}>
               <input
                 type="text"
-                placeholder="Search listings..."
+                placeholder="Search..."
                 className="form-control"
                 style={{
                   border: "2px solid #007bff",
@@ -174,14 +176,16 @@ const Navbar = () => {
                 </Dropdown.Toggle>
 
                 <Dropdown.Menu>
-                  <Dropdown.Item as={Link} to={`/profile/${user.uid}`}>
-                    Profile
+                  <Dropdown.Item as={Link} to={`/profile/${user.uid}`} className="d-flex align-items-center">
+                    <FaUserAlt className="me-2" /> Profile
                   </Dropdown.Item>
-                  <Dropdown.Item as={Link} to={`/favorites`}>
-                    My Favorites
+                  <Dropdown.Item as={Link} to={`/orders`} className="d-flex align-items-center">
+                    <AiOutlineFileSearch className="me-2" /> My Orders
                   </Dropdown.Item>
                   <Dropdown.Divider />
-                  <Dropdown.Item onClick={handleSignout}>Logout</Dropdown.Item>
+                  <Dropdown.Item onClick={handleSignout} className="d-flex align-items-center">
+                    <BiLogOut className="me-2" /> Logout
+                  </Dropdown.Item>
                 </Dropdown.Menu>
               </Dropdown>
             ) : (

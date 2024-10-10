@@ -76,7 +76,7 @@ const Ad = () => {
                   src={image.url}
                   className="d-block w-100"
                   alt={ad.title}
-                  style={{ maxHeight: "500px", objectFit: "contain" }} // Ensures the image is centered and fits within the bounds
+                  style={{ maxHeight: "500px", objectFit: "contain" }}
                 />
                 <button
                   className="carousel-control-prev"
@@ -123,7 +123,7 @@ const Ad = () => {
                   <AiFillStar
                     size={30}
                     onClick={() => toggleFavorite(val.users, id)}
-                    className="text-warning cursor-pointer" // Yellow color for filled star
+                    className="text-warning cursor-pointer"
                   />
                 ) : (
                   <AiOutlineStar
@@ -133,7 +133,12 @@ const Ad = () => {
                 )}
               </div>
               <h6 className="card-subtitle mb-2">{ad.title}</h6>
-              <p className="card-text">{ad.description}</p> {/* Added description here */}
+              <p className="card-text">{ad.description}</p>
+              {ad.condition && (
+                <p className="card-text">
+                  Condition: <strong>{ad.condition}</strong>
+                </p>
+              )}
               <div className="d-flex justify-content-between">
                 <p className="card-text">
                   {ad.location} -{" "}

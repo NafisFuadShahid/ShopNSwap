@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import { PiUploadDuotone } from "react-icons/pi";
-import { FaToggleOff, FaToggleOn } from "react-icons/fa";
 import { ref, getDownloadURL, uploadBytes } from "firebase/storage";
 import { addDoc, collection, doc, setDoc, Timestamp } from "firebase/firestore";
 import { storage, db, auth } from "../firebaseConfig";
@@ -66,6 +65,7 @@ const Sell = () => {
     if (!location) newErrors.location = "Location is required";
     if (!address) newErrors.address = "Address is required";
     if (!contact) newErrors.contact = "Contact is required";
+    if (!images.length) newErrors.images = "At least one image is required"; // Require at least one image
     if (price < 0) newErrors.price = "Price cannot be negative"; // Prevent negative prices
 
     if (Object.keys(newErrors).length > 0) {
@@ -123,6 +123,9 @@ const Sell = () => {
     }
   };
 
+  // Determine if the condition toggle should be displayed
+  const showConditionToggle = !["Pets", "Kids & Baby Products", "Health & Wellness", "Others"].includes(category);
+
   return (
     <div className="container py-5">
       <div className="card shadow-lg p-5 rounded-3">
@@ -143,7 +146,9 @@ const Sell = () => {
               multiple
               onChange={handleChange}
               name="images"
+              required
             />
+            {errors.images && <span className="text-danger d-block mt-2">{errors.images}</span>} {/* Image error */}
           </div>
 
           {/* Image Preview Section */}
@@ -156,7 +161,7 @@ const Sell = () => {
                     src={preview}
                     alt={`Preview ${index + 1}`}
                     className="img-thumbnail m-2"
-                    style={{ width: "100px", height: "100px", objectFit: "cover", boxShadow: "0 2px 8px rgba(0, 0, 0, 0.2)" }}
+                    style={{ maxWidth: "150px", maxHeight: "150px", objectFit: "contain" }} // Maintain aspect ratio
                   />
                 ))}
               </div>
@@ -241,35 +246,36 @@ const Sell = () => {
             />
           </div>
 
-          {/* New/Used Switch */}
-          <div className="col-md-6 d-flex align-items-center">
-            <label className="form-label fw-bold me-3">Condition:</label>
-            <div className="form-check form-switch" onClick={handleToggle} style={{ cursor: "pointer" }}>
-              <input
-                className="form-check-input"
-                type="checkbox"
-                role="switch"
-                id="flexSwitchCheckDefault"
-                checked={isNew}
-                onChange={handleToggle}
-                style={{ width: "40px", height: "20px" }}
-              />
-              <label className="form-check-label ms-2" htmlFor="flexSwitchCheckDefault">
-                {isNew ? "New" : "Used"}
-              </label>
+          {/* New/Used Switch - Conditionally Rendered */}
+          {showConditionToggle && (
+            <div className="col-md-6 d-flex align-items-center">
+              <label className="form-label fw-bold me-3">Condition:</label>
+              <div className="form-check form-switch" onClick={handleToggle} style={{ cursor: "pointer" }}>
+                <input
+                  className="form-check-input"
+                  type="checkbox"
+                  role="switch"
+                  id="isNew"
+                  checked={isNew}
+                  readOnly
+                />
+                <label className="form-check-label" htmlFor="isNew">
+                  {isNew ? "New" : "Used"}
+                </label>
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Address */}
-          <div className="col-12">
+          <div className="col-md-6">
             <label className="form-label fw-bold">Address {errors.address && <span className="text-danger">* {errors.address}</span>}</label>
-            <textarea
+            <input
+              type="text"
               className={`form-control shadow-sm ${errors.address ? "border-danger" : ""}`}
               name="address"
               value={address}
               onChange={handleChange}
-              rows="3"
-              placeholder="Enter address"
+              placeholder="Enter the address"
               required
             />
           </div>
@@ -282,19 +288,18 @@ const Sell = () => {
               name="description"
               value={description}
               onChange={handleChange}
-              rows="5"
-              placeholder="Enter product description"
+              placeholder="Describe the product (optional)"
+              rows="4"
             />
           </div>
 
-          {/* Submit Button */}
+          {/* Create Ad Button */}
           <div className="col-12 text-center">
-            <button type="submit" className="btn btn-primary" disabled={loading}>
+            <button type="submit" className="btn btn-primary mt-3" disabled={loading}>
               {loading ? "Creating Ad..." : "Create Ad"}
             </button>
+            {error && <p className="text-danger mt-2">{error}</p>}
           </div>
-
-          {error && <div className="col-12 text-danger text-center">{error}</div>}
         </form>
       </div>
     </div>
