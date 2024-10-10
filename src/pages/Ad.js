@@ -133,6 +133,7 @@ const Ad = () => {
                 )}
               </div>
               <h6 className="card-subtitle mb-2">{ad.title}</h6>
+              <p className="card-text">{ad.description}</p> {/* Added description here */}
               <div className="d-flex justify-content-between">
                 <p className="card-text">
                   {ad.location} -{" "}
@@ -143,7 +144,6 @@ const Ad = () => {
                 {ad.postedBy === auth.currentUser?.uid && (
                   <FaTrashAlt
                     style={{ height: '20px', width: '30px' }}
-                    // className="text-danger"
                     onClick={deleteAd}
                   />
                 )}

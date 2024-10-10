@@ -100,6 +100,10 @@ const Home = () => {
     <div className="mt-5 container">
       <style>
         {`
+          body {
+            background-color: #fdfdfd; /* Off-white background for the entire page */
+            color: #333; /* Dark text for readability */
+          }
           .category-container {
             position: relative;
           }
@@ -111,8 +115,9 @@ const Home = () => {
             align-items: center;
             justify-content: center;
             border-radius: 50%; /* Makes the cards circular */
-            background-color: #f9f9f9;
+            background-color: #ffffff; /* White background for category cards */
             transition: border 0.3s;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); /* Soft shadow for depth */
           }
           .category-image {
             width: 50px;
@@ -130,7 +135,7 @@ const Home = () => {
             position: absolute;
             top: 50%;
             transform: translateY(-50%);
-            background-color: rgba(0, 0, 0, 0.5);
+            background-color: rgba(0, 0, 0, 0.7); /* Dark background for arrows */
             color: white;
             border: none;
             padding: 10px;
@@ -158,19 +163,19 @@ const Home = () => {
             width: 200px; /* Make the dropdown smaller */
             border-radius: 20px; /* Rounded corners */
             padding: 8px 12px;
-            background-color: #f1f1f1; /* Light gray background */
+            background-color: #ffffff; /* White background for the dropdown */
             border: 1px solid #ccc; /* Add a light border */
             transition: all 0.3s ease; /* Smooth transition */
           }
 
           .dropdown-custom:hover {
-            background-color: #e2e2e2; /* Slightly darker on hover */
+            background-color: #e6e6e6; /* Slightly darker on hover */
             border-color: #888; /* Darker border on hover */
           }
 
           .dropdown-custom:focus {
             outline: none;
-            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1); /* Shadow on focus */
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.2); /* Shadow on focus */
           }
         `}
       </style>

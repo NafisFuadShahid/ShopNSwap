@@ -1,31 +1,29 @@
 import { signOut } from "firebase/auth";
-import { doc, updateDoc, onSnapshot } from "firebase/firestore"; // Using onSnapshot for real-time updates
+import { doc, updateDoc, onSnapshot } from "firebase/firestore";
 import React, { useContext, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { AuthContext } from "../context/auth";
-import { auth, db } from "../firebaseConfig"; // Assuming auth and db are already set up
+import { auth, db } from "../firebaseConfig";
 import { Dropdown } from "react-bootstrap";
-import { FaUserAlt } from "react-icons/fa"; // Importing the icon
+import { FaUserAlt, FaShoppingCart, FaSearch } from "react-icons/fa";
 import 'bootstrap/dist/css/bootstrap.min.css';
 
 const Navbar = () => {
   const { user } = useContext(AuthContext);
   const navigate = useNavigate();
-  const [photoUrl, setPhotoUrl] = useState(null); // State to hold the photo URL
+  const [photoUrl, setPhotoUrl] = useState(null);
 
   useEffect(() => {
     if (user) {
       const userDocRef = doc(db, "users", user.uid);
 
-      // Listen to real-time updates on the user's document
       const unsubscribe = onSnapshot(userDocRef, (docSnapshot) => {
         if (docSnapshot.exists()) {
           const userData = docSnapshot.data();
-          setPhotoUrl(userData.photoUrl || null); // Set photoUrl or null if it's removed
+          setPhotoUrl(userData.photoUrl || null);
         }
       });
 
-      // Clean up the listener when the component unmounts
       return () => unsubscribe();
     }
   }, [user]);
@@ -41,82 +39,140 @@ const Navbar = () => {
     }
   };
 
+  const [hoveredButton, setHoveredButton] = useState(null);
+
+  const handleMouseEnter = (buttonName) => {
+    setHoveredButton(buttonName);
+  };
+
+  const handleMouseLeave = () => {
+    setHoveredButton(null);
+  };
+
+  const buttonStyle = (buttonName) => ({
+    padding: "10px",
+    color: hoveredButton === buttonName ? "#fff" : "#0056b3",
+    fontWeight: "bold",
+    backgroundColor: hoveredButton === buttonName ? "#007bff" : "#f0f0f0",
+    transition: "background-color 0.3s ease, color 0.3s ease",
+  });
+
   return (
     <nav className="navbar navbar-expand-md navbar-light bg-white shadow-sm sticky-top">
-      <div className="container">
-        <Link className="navbar-brand fw-bold text-primary pulse-logo" to="/">
+      <div className="container d-flex justify-content-between align-items-center">
+        <Link className="navbar-brand fw-bold text-primary" to="/" style={{ color: "#0056b3", fontSize: "24px" }}>
           ShopNSwap
         </Link>
-        <button
-          className="navbar-toggler border-0"
-          type="button"
-          data-bs-toggle="collapse"
-          data-bs-target="#navbarNav"
-          aria-controls="navbarNav"
-          aria-expanded="false"
-          aria-label="Toggle navigation"
-        >
-          <span className="navbar-toggler-icon"></span>
-        </button>
-        <div className="collapse navbar-collapse" id="navbarNav">
-          <ul className="navbar-nav ms-auto align-items-center">
-            {user ? (
-              <>
-                <li className="nav-item">
-                  <Dropdown>
-                    <Dropdown.Toggle
-                      id="dropdown-basic"
-                      variant="light"
-                      className="d-flex align-items-center border-0 bg-transparent"
-                    >
-                      {photoUrl ? (
-                        <img
-                          src={photoUrl}
-                          alt={user.name || "Profile Avatar"}
-                          className="rounded-circle"
-                          style={{
-                            width: "40px",
-                            height: "40px",
-                            objectFit: "cover",
-                    
-                          }}
-                        />
-                      ) : (
-                        <FaUserAlt size={30} className="text-secondary" />
-                      )}
-                    </Dropdown.Toggle>
+        <ul className="navbar-nav me-auto mb-2 mb-lg-0">
+          <li className="nav-item">
+            <Link
+              className="nav-link"
+              to="/sell"
+              style={buttonStyle("sell")}
+              onMouseEnter={() => handleMouseEnter("sell")}
+              onMouseLeave={handleMouseLeave}
+            >
+              Sell
+            </Link>
+          </li>
+          <li className="nav-item">
+            <Link
+              className="nav-link"
+              to="/buy"
+              style={buttonStyle("buy")}
+              onMouseEnter={() => handleMouseEnter("buy")}
+              onMouseLeave={handleMouseLeave}
+            >
+              Buy
+            </Link>
+          </li>
+          <li className="nav-item">
+            <Link
+              className="nav-link"
+              to="/swap"
+              style={buttonStyle("swap")}
+              onMouseEnter={() => handleMouseEnter("swap")}
+              onMouseLeave={handleMouseLeave}
+            >
+              Swap
+            </Link>
+          </li>
+          <li className="nav-item">
+            <Link
+              className="nav-link"
+              to="/donate"
+              style={buttonStyle("donate")}
+              onMouseEnter={() => handleMouseEnter("donate")}
+              onMouseLeave={handleMouseLeave}
+            >
+              Donate
+            </Link>
+          </li>
+        </ul>
 
-                    <Dropdown.Menu>
-                      <Dropdown.Item as={Link} to={`/profile/${user.uid}`}>
-                        Profile
-                      </Dropdown.Item>
-                      <Dropdown.Item as={Link} to={`/sell`}>
-                        Sell
-                      </Dropdown.Item>
-                      <Dropdown.Item as={Link} to={`/favorites`}>
-                        My Favorites
-                      </Dropdown.Item>
-                      <Dropdown.Divider />
-                      <Dropdown.Item onClick={handleSignout}>Logout</Dropdown.Item>
-                    </Dropdown.Menu>
-                  </Dropdown>
-                </li>
-              </>
-            ) : (
-              <>
-                <li className="nav-item">
-                  <Link className="nav-link text-dark" to="/auth/register">
-                    Register
-                  </Link>
-                </li>
-                <li className="nav-item">
-                  <Link className="nav-link text-dark" to="/auth/login">
-                    Login
-                  </Link>
-                </li>
-              </>
-            )}
-          </ul>
+        <div className="d-flex align-items-center">
+          {/* Search bar */}
+          <div className="input-group" style={{ marginRight: "130px", width: "300px" }}>
+            <input
+              type="text"
+              placeholder="Search..."
+              className="form-control"
+              style={{
+                border: "1px solid #ced4da",
+                padding: "5px 10px",
+              }}
+            />
+            <span className="input-group-text" style={{ backgroundColor: "#007bff", borderColor: "#007bff", color: "white" }}>
+              <FaSearch />
+            </span>
+          </div>
+
+          {/* Cart button */}
+          <button className="btn btn-primary" style={{ backgroundColor: "#007bff", borderColor: "#007bff", marginRight: "10px" }}>
+            <FaShoppingCart size={20} />
+          </button>
+
+          {/* User dropdown */}
+          {user ? (
+            <Dropdown>
+              <Dropdown.Toggle
+                id="dropdown-basic"
+                variant="light"
+                className="d-flex align-items-center border-0 bg-transparent ms-3"
+              >
+                {photoUrl ? (
+                  <img
+                    src={photoUrl}
+                    alt={user.name || "Profile Avatar"}
+                    className="rounded-circle"
+                    style={{ width: "40px", height: "40px", objectFit: "cover" }}
+                  />
+                ) : (
+                  <FaUserAlt size={30} className="text-secondary" />
+                )}
+              </Dropdown.Toggle>
+
+              <Dropdown.Menu>
+                <Dropdown.Item as={Link} to={`/profile/${user.uid}`}>
+                  Profile
+                </Dropdown.Item>
+                <Dropdown.Item as={Link} to={`/favorites`}>
+                  My Favorites
+                </Dropdown.Item>
+                <Dropdown.Divider />
+                <Dropdown.Item onClick={handleSignout}>Logout</Dropdown.Item>
+              </Dropdown.Menu>
+            </Dropdown>
+          ) : (
+            <div className="d-flex">
+              <Link className="btn btn-outline-primary me-2" to="/auth/register">
+                Register
+              </Link>
+              <Link className="btn btn-outline-primary" to="/auth/login">
+                Login
+              </Link>
+            </div>
+          )}
         </div>
       </div>
     </nav>
