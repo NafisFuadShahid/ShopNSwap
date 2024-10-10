@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
-import { collection, orderBy, query, where, getDocs } from "firebase/firestore";
+import { collection, getDocs, query, where } from "firebase/firestore";
 import { db } from "../firebaseConfig";
 import AdCard from "../components/AdCard";
-import { FaChevronRight, FaChevronLeft } from "react-icons/fa"; // Importing left and right arrow icons
+import { FaChevronRight, FaChevronLeft } from "react-icons/fa";
 
 const categories = [
   "Vehicles",
@@ -108,22 +108,23 @@ const Home = () => {
             position: relative;
           }
           .category-card {
-            min-width: 150px;
-            height: 150px;
+            width: 120px; /* Ensures square shape */
+            height: 120px; /* Ensures square shape */
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            border-radius: 50%; /* Makes the cards circular */
+            border-radius: 8px; /* Slightly rounded edges */
             background-color: #ffffff; /* White background for category cards */
             transition: border 0.3s;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); /* Soft shadow for depth */
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Soft shadow for depth */
+            margin-right: 10px; /* Spacing between category cards */
           }
           .category-image {
-            width: 50px;
-            height: 50px;
+            width: 60px;
+            height: 60px;
             object-fit: cover;
-            border-radius: 50%;
+            margin-bottom: 8px;
           }
           .d-flex {
             scrollbar-width: none; /* For Firefox */
@@ -200,7 +201,7 @@ const Home = () => {
             <button
               key={index}
               onClick={() => handleCategoryClick(category)} // Set the selected category on click
-              className="text-decoration-none me-3"
+              className="text-decoration-none"
               style={{ border: "none", background: "none", padding: "0" }}
             >
               <div
@@ -212,9 +213,9 @@ const Home = () => {
                   src={`/images/${category}.jpg`} // Dynamically load images from public/images directory
                   onError={(e) => (e.target.src = "https://static.thenounproject.com/png/2932881-200.png")} // Fallback image
                   alt={category}
-                  className="category-image mb-2"
+                  className="category-image"
                 />
-                <h5>{category}</h5>
+                <h6>{category}</h6> {/* Adjusted text size to fit the square design */}
               </div>
             </button>
           ))}
