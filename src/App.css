@@ -178,3 +178,36 @@ h4 {
   transform: rotate(360deg); /* Full rotation on hover */
 }
 
+.custom-btn {
+  transition: background-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.custom-btn:hover {
+  background-color: #007bff;
+  box-shadow: 0 4px 8px rgba(0, 123, 255, 0.3);
+}
+
+
+
+.form-control {
+  padding: 12px; 
+  border-radius: 0.5rem; 
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); 
+}
+
+.form-select {
+  padding: 12px; 
+  border-radius: 0.5rem; 
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); 
+}
+
+.btn-custom {
+  display: inline-flex;
+  align-items: center;
+  padding: 10px 20px;
+  border-radius: 5px;
+}
+
+.img-thumbnail {
+  border: 2px solid #ddd; 
+}

@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import { FaCloudUploadAlt } from "react-icons/fa";
+import { PiUploadDuotone } from "react-icons/pi";
+import { FaToggleOff, FaToggleOn } from "react-icons/fa";
 import { ref, getDownloadURL, uploadBytes } from "firebase/storage";
 import { addDoc, collection, doc, setDoc, Timestamp } from "firebase/firestore";
 import { storage, db, auth } from "../firebaseConfig";
@@ -26,14 +27,15 @@ const Sell = () => {
     address: "",
     contact: "",
     description: "",
+    isNew: true,
     error: "",
     loading: false,
   });
 
   const [imagePreviews, setImagePreviews] = useState([]);
-  const [errors, setErrors] = useState({});  // Tracks which fields are missing
+  const [errors, setErrors] = useState({});
 
-  const { images, title, category, price, location, address, contact, description, error, loading } = values;
+  const { images, title, category, price, location, address, contact, description, isNew, error, loading } = values;
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -47,8 +49,11 @@ const Sell = () => {
       setImagePreviews(previews);
     }
 
-    // Clear field-specific errors when the user types in that field
     setErrors({ ...errors, [name]: "" });
+  };
+
+  const handleToggle = () => {
+    setValues({ ...values, isNew: !isNew });
   };
 
   const handleSubmit = async (e) => {
@@ -61,8 +66,8 @@ const Sell = () => {
     if (!location) newErrors.location = "Location is required";
     if (!address) newErrors.address = "Address is required";
     if (!contact) newErrors.contact = "Contact is required";
+    if (price < 0) newErrors.price = "Price cannot be negative"; // Prevent negative prices
 
-    // If there are errors, stop the form submission
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       return;
@@ -91,6 +96,7 @@ const Sell = () => {
         address,
         contact,
         description,
+        isNew,
         isSold: false,
         publishedAt: Timestamp.fromDate(new Date()),
         postedBy: auth.currentUser.uid,
@@ -107,6 +113,7 @@ const Sell = () => {
         address: "",
         contact: "",
         description: "",
+        isNew: true,
         loading: false,
       });
       setImagePreviews([]);
@@ -124,8 +131,8 @@ const Sell = () => {
         <form onSubmit={handleSubmit} className="row g-3">
           {/* Image Upload Section */}
           <div className="col-12 text-center">
-            <label htmlFor="image" className="btn btn-outline-secondary">
-              <FaCloudUploadAlt size={24} className="me-2" />
+            <label htmlFor="image" className="btn btn-outline-secondary custom-btn">
+              <PiUploadDuotone size={24} className="me-2" />
               Upload Images
             </label>
             <input
@@ -149,7 +156,7 @@ const Sell = () => {
                     src={preview}
                     alt={`Preview ${index + 1}`}
                     className="img-thumbnail m-2"
-                    style={{ width: "100px", height: "100px", objectFit: "cover" }}
+                    style={{ width: "100px", height: "100px", objectFit: "cover", boxShadow: "0 2px 8px rgba(0, 0, 0, 0.2)" }}
                   />
                 ))}
               </div>
@@ -161,7 +168,7 @@ const Sell = () => {
             <label className="form-label fw-bold">Title {errors.title && <span className="text-danger">* {errors.title}</span>}</label>
             <input
               type="text"
-              className={`form-control ${errors.title ? "border-danger" : ""}`}
+              className={`form-control shadow-sm ${errors.title ? "border-danger" : ""}`}
               name="title"
               value={title}
               onChange={handleChange}
@@ -175,7 +182,7 @@ const Sell = () => {
             <label className="form-label fw-bold">Category {errors.category && <span className="text-danger">* {errors.category}</span>}</label>
             <select
               name="category"
-              className={`form-select ${errors.category ? "border-danger" : ""}`}
+              className={`form-select shadow-sm ${errors.category ? "border-danger" : ""}`}
               onChange={handleChange}
               required
             >
@@ -193,7 +200,7 @@ const Sell = () => {
             <label className="form-label fw-bold">Price {errors.price && <span className="text-danger">* {errors.price}</span>}</label>
             <input
               type="number"
-              className={`form-control ${errors.price ? "border-danger" : ""}`}
+              className={`form-control shadow-sm ${errors.price ? "border-danger" : ""}`}
               name="price"
               value={price}
               onChange={handleChange}
@@ -207,7 +214,7 @@ const Sell = () => {
             <label className="form-label fw-bold">Location {errors.location && <span className="text-danger">* {errors.location}</span>}</label>
             <select
               name="location"
-              className={`form-select ${errors.location ? "border-danger" : ""}`}
+              className={`form-select shadow-sm ${errors.location ? "border-danger" : ""}`}
               onChange={handleChange}
               required
             >
@@ -220,26 +227,12 @@ const Sell = () => {
             </select>
           </div>
 
-          {/* Address */}
-          <div className="col-md-12">
-            <label className="form-label fw-bold">Address {errors.address && <span className="text-danger">* {errors.address}</span>}</label>
-            <input
-              type="text"
-              className={`form-control ${errors.address ? "border-danger" : ""}`}
-              name="address"
-              value={address}
-              onChange={handleChange}
-              placeholder="Enter address"
-              required
-            />
-          </div>
-
           {/* Contact */}
-          <div className="col-md-12">
+          <div className="col-md-6">
             <label className="form-label fw-bold">Contact {errors.contact && <span className="text-danger">* {errors.contact}</span>}</label>
             <input
               type="text"
-              className={`form-control ${errors.contact ? "border-danger" : ""}`}
+              className={`form-control shadow-sm ${errors.contact ? "border-danger" : ""}`}
               name="contact"
               value={contact}
               onChange={handleChange}
@@ -248,28 +241,60 @@ const Sell = () => {
             />
           </div>
 
+          {/* New/Used Switch */}
+          <div className="col-md-6 d-flex align-items-center">
+            <label className="form-label fw-bold me-3">Condition:</label>
+            <div className="form-check form-switch" onClick={handleToggle} style={{ cursor: "pointer" }}>
+              <input
+                className="form-check-input"
+                type="checkbox"
+                role="switch"
+                id="flexSwitchCheckDefault"
+                checked={isNew}
+                onChange={handleToggle}
+                style={{ width: "40px", height: "20px" }}
+              />
+              <label className="form-check-label ms-2" htmlFor="flexSwitchCheckDefault">
+                {isNew ? "New" : "Used"}
+              </label>
+            </div>
+          </div>
+
+          {/* Address */}
+          <div className="col-12">
+            <label className="form-label fw-bold">Address {errors.address && <span className="text-danger">* {errors.address}</span>}</label>
+            <textarea
+              className={`form-control shadow-sm ${errors.address ? "border-danger" : ""}`}
+              name="address"
+              value={address}
+              onChange={handleChange}
+              rows="3"
+              placeholder="Enter address"
+              required
+            />
+          </div>
+
           {/* Description */}
-          <div className="col-md-12">
+          <div className="col-12">
             <label className="form-label fw-bold">Description</label>
             <textarea
-              className="form-control"
+              className="form-control shadow-sm"
               name="description"
               value={description}
               onChange={handleChange}
-              placeholder="Enter a description for your product"
-              rows="3"
-            ></textarea>
+              rows="5"
+              placeholder="Enter product description"
+            />
           </div>
-
-          {/* Error Message */}
-          {error && <p className="text-center text-danger">{error}</p>}
 
           {/* Submit Button */}
           <div className="col-12 text-center">
-            <button className="btn btn-primary" type="submit" disabled={loading}>
-              {loading ? "Creating..." : "Create Ad"}
+            <button type="submit" className="btn btn-primary" disabled={loading}>
+              {loading ? "Creating Ad..." : "Create Ad"}
             </button>
           </div>
+
+          {error && <div className="col-12 text-danger text-center">{error}</div>}
         </form>
       </div>
     </div>
