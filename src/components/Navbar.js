@@ -5,9 +5,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { AuthContext } from "../context/auth";
 import { auth, db } from "../firebaseConfig";
 import { Dropdown } from "react-bootstrap";
-import { FaUserAlt, FaShoppingCart, FaSearch } from "react-icons/fa";
-import { BiLogOut } from "react-icons/bi"; // Import the logout icon
-import { AiOutlineFileSearch } from "react-icons/ai"; // Import the my orders icon
+import { FaUserAlt, FaShoppingCart, FaSearch, FaUser, FaHeart, FaSignOutAlt } from "react-icons/fa";
 import 'bootstrap/dist/css/bootstrap.min.css';
 
 const Navbar = () => {
@@ -176,15 +174,15 @@ const Navbar = () => {
                 </Dropdown.Toggle>
 
                 <Dropdown.Menu>
-                  <Dropdown.Item as={Link} to={`/profile/${user.uid}`} className="d-flex align-items-center">
-                    <FaUserAlt className="me-2" /> Profile
+                  <Dropdown.Item as={Link} to={`/profile/${user.uid}`}>
+                    <FaUser className="me-2" /> Profile
                   </Dropdown.Item>
-                  <Dropdown.Item as={Link} to={`/orders`} className="d-flex align-items-center">
-                    <AiOutlineFileSearch className="me-2" /> My Orders
+                  <Dropdown.Item as={Link} to={`/favorites`}>
+                    <FaHeart className="me-2" /> My Favorites
                   </Dropdown.Item>
                   <Dropdown.Divider />
-                  <Dropdown.Item onClick={handleSignout} className="d-flex align-items-center">
-                    <BiLogOut className="me-2" /> Logout
+                  <Dropdown.Item onClick={handleSignout}>
+                    <FaSignOutAlt className="me-2" /> Logout
                   </Dropdown.Item>
                 </Dropdown.Menu>
               </Dropdown>
