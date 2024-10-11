@@ -26,16 +26,16 @@ const monthAndYear = (date) =>
 
 const Profile = () => {
   const { id } = useParams();
-
   const [img, setImg] = useState("");
   const [ads, setAds] = useState([]);
-  const [newName, setNewName] = useState(""); // New state for user name
+  const [newName, setNewName] = useState("");
+  const [previewImg, setPreviewImg] = useState(""); // Preview before upload
 
   const { val: user } = useSnapshot("users", id);
 
-
   // Upload user image
   const uploadImage = async () => {
+    if (!img) return;
     const imgRef = ref(storage, `profile/${Date.now()} - ${img.name}`);
     if (user.photoUrl) {
       await deleteObject(ref(storage, user.photoPath));
@@ -46,9 +46,8 @@ const Profile = () => {
       photoUrl: url,
       photoPath: result.ref.fullPath,
     });
-
-    console.log("Image uploaded:", url); // Debugging line
     setImg("");
+    setPreviewImg(""); // Reset the preview
   };
 
   // Fetch user ads
@@ -60,33 +59,25 @@ const Profile = () => {
       orderBy("publishedAt", "desc")
     );
     const docs = await getDocs(q);
-    let ads = [];
+    const adsList = [];
     docs.forEach((doc) => {
-      ads.push({ ...doc.data(), id: doc.id });
+      adsList.push({ ...doc.data(), id: doc.id });
     });
-    setAds(ads);
+    setAds(adsList);
   };
 
   // Handle image upload and deletion
   const deletePhoto = async () => {
-    if (!user.photoPath) {
-      console.warn("No photo path available for deletion.");
-      return; // Exit if there's no photo path
-    }
+    if (!user.photoPath) return;
   
     const confirm = window.confirm("Delete photo permanently?");
     if (confirm) {
       try {
-        // Delete the photo from storage
         await deleteObject(ref(storage, user.photoPath));
-        // Update user document in Firestore
         await updateDoc(doc(db, "users", auth.currentUser.uid), {
           photoUrl: "",
           photoPath: "",
         });
-  
-        // Since you are using useSnapshot, the user state will be updated automatically
-        console.log("Photo deleted successfully.");
       } catch (error) {
         console.error("Error deleting photo: ", error);
         alert("There was an error deleting the photo.");
@@ -107,24 +98,41 @@ const Profile = () => {
     setNewName(""); // Clear the input after updating
   };
 
+  // Image preview handler
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setImg(file);
+      setPreviewImg(URL.createObjectURL(file)); // Preview image before uploading
+    }
+  };
+
   useEffect(() => {
-    // getUser();
     getAds();
     if (img) {
       uploadImage();
     }
   }, [img]);
 
-  // Debugging: Log the user state
-  console.log("User state:", user); 
-
   return user ? (
     <div className="container mt-5">
       <div className="row justify-content-center">
         <div className="col-md-6 text-center">
-          <div className="profile-card shadow p-4 rounded">
-            <div className="profile-image mb-3">
-              {user.photoUrl ? (
+          <div className="profile-card  p-4 rounded">
+            <div className="profile-image mx-auto w-40 mb-3">
+              {previewImg ? (
+                <img
+                  src={previewImg}
+                  alt="Preview"
+                  className="rounded-circle"
+                  style={{
+                    width: "150px",
+                    height: "150px",
+                    objectFit: "cover",
+                    border: "2px solid #007bff",
+                  }}
+                />
+              ) : user.photoUrl ? (
                 <img
                   src={user.photoUrl}
                   alt={user.name}
@@ -137,14 +145,13 @@ const Profile = () => {
                   }}
                 />
               ) : (
-                <>
-                  {console.log("No photoUrl found, using default icon.")}
-                  <FaUserAlt size={80} className="text-secondary" />
-                </>
+                <FaUserAlt size={80} className="text-secondary" />
               )}
             </div>
             <h3 className="fw-bold">{user.name}</h3>
-            <p className="text-muted">Member since {monthAndYear(user.createdAt.toDate())}</p>
+            <p className="text-muted">
+              Member since {monthAndYear(user.createdAt.toDate())}
+            </p>
 
             <div className="dropdown my-3">
               <button
@@ -165,7 +172,7 @@ const Profile = () => {
                     id="photo"
                     accept="image/*"
                     style={{ display: "none" }}
-                    onChange={(e) => setImg(e.target.files[0])}
+                    onChange={handleImageChange}
                   />
                 </li>
                 {user.photoUrl && (
@@ -193,16 +200,16 @@ const Profile = () => {
           </div>
         </div>
         <div className="col-md-8 mt-4 text-start">
-          <h4 className="fw-bold">Profile Details</h4>
+       
           <hr />
           {ads.length ? (
-            <h4 className="fw-bold">Products</h4>
+            <h4 className="fw-bold m-10 text-2xl">Products</h4>
           ) : (
             <h4>There are no ads published by this user</h4>
           )}
           <div className="row">
             {ads.map((ad) => (
-              <div key={ad.id} className="col-sm-6 col-md-4 mb-3">
+              <div key={ad.id} className="col-sm-6 col-md-5 mb-3">
                 <AdCard ad={ad} />
               </div>
             ))}
