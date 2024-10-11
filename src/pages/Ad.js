@@ -66,7 +66,6 @@ const Ad = () => {
       {/* Fullscreen Image Carousel */}
       <div className="relative mb-4 mb-[200px] ">
         {ad.isSold && <Sold singleAd={true} />}
-<<<<<<< HEAD
         <div className="relative overflow-hidden h-64 md:h-96 flex justify-center items-center">
           {ad.images.map((image, i) => (
             <div
@@ -120,97 +119,6 @@ const Ad = () => {
                 className="text-gray-400 cursor-pointer"
               />
             )}
-=======
-        <div id="carouselExample" className="carousel slide">
-          <div className="carousel-inner">
-            {ad.images.map((image, i) => (
-              <div
-                className={`carousel-item ${idx === i ? "active" : ""}`}
-                key={i}
-              >
-                <img
-                  src={image.url}
-                  className="d-block w-100"
-                  alt={ad.title}
-                  style={{ maxHeight: "500px", objectFit: "contain" }}
-                />
-                <button
-                  className="carousel-control-prev"
-                  type="button"
-                  data-bs-target="#carouselExample"
-                  data-bs-slide="prev"
-                  onClick={() => setIdx(i)}
-                >
-                  <span
-                    className="carousel-control-prev-icon"
-                    aria-hidden="true"
-                  ></span>
-                  <span className="visually-hidden">Previous</span>
-                </button>
-                <button
-                  className="carousel-control-next"
-                  type="button"
-                  data-bs-target="#carouselExample"
-                  data-bs-slide="next"
-                  onClick={() => setIdx(i)}
-                >
-                  <span
-                    className="carousel-control-next-icon"
-                    aria-hidden="true"
-                  ></span>
-                  <span className="visually-hidden">Next</span>
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      <div className="row d-flex align-items-stretch">
-        {/* First card: Price and details */}
-        <div className="col-md-6 d-flex">
-          <div className="card mb-4 h-100 w-100">
-            <div className="card-body">
-              <div className="d-flex justify-content-between align-items-center">
-                <h5 className="card-title">
-                  BDT. {Number(ad.price).toLocaleString()}
-                </h5>
-                {val?.users?.includes(auth.currentUser?.uid) ? (
-                  <AiFillStar
-                    size={30}
-                    onClick={() => toggleFavorite(val.users, id)}
-                    className="text-warning cursor-pointer"
-                  />
-                ) : (
-                  <AiOutlineStar
-                    size={30}
-                    onClick={() => toggleFavorite(val.users, id)}
-                  />
-                )}
-              </div>
-              <h6 className="card-subtitle mb-2">{ad.title}</h6>
-              <p className="card-text">{ad.description}</p>
-              {ad.condition && (
-                <p className="card-text">
-                  Condition: <strong>{ad.condition}</strong>
-                </p>
-              )}
-              <div className="d-flex justify-content-between">
-                <p className="card-text">
-                  {ad.location} -{" "}
-                  <small>
-                    <Moment fromNow>{ad.publishedAt.toDate()}</Moment>
-                  </small>
-                </p>
-                {ad.postedBy === auth.currentUser?.uid && (
-                  <FaTrashAlt
-                    style={{ height: '20px', width: '30px' }}
-                    onClick={deleteAd}
-                  />
-                )}
-              </div>
-            </div>
->>>>>>> ee9c4bb5745120291516cc894fbf78d5569adcc7
           </div>
           <h3 className="text-lg font-medium my-2">{ad.title}</h3>
           <p className="text-gray-600 mb-4">{ad.description}</p>
