@@ -2,26 +2,26 @@ import React, { useState, useEffect, useRef } from "react";
 import { collection, orderBy, query, where, getDocs } from "firebase/firestore";
 import { db } from "../firebaseConfig";
 import AdCard from "../components/AdCard";
-import { FaChevronRight, FaChevronLeft } from "react-icons/fa"; // Importing left and right arrow icons
+import { FaChevronRight, FaChevronLeft } from "react-icons/fa";
 
 const categories = [
   "Vehicles",
   "Property",
   "Electronics",
-  "Home & Garden",
-  "Fashion & Beauty",
+  "Home",
+  "Fashion",
   "Jobs",
   "Services",
   "Pets",
-  "Sports & Outdoors",
-  "Hobbies & Leisure",
-  "Kids & Baby Products",
-  "Business & Industrial",
-  "Health & Wellness",
+  "Sports",
+  "Hobbies",
+  "Kids",
+  "Business",
+  "Health",
   "Education",
-  "Travel & Tourism",
+  "Travel",
   "Events",
-  "Agriculture & Farming",
+  "Agriculture",
   "Others",
 ];
 
@@ -33,16 +33,13 @@ const Home = () => {
   const [showRightArrow, setShowRightArrow] = useState(true);
   const categoryRef = useRef(null); // Reference to the category container
 
-  // Function to fetch ads from Firestore, optionally filtered by category and sorted by price or publish date
   const getAds = async (category = null, sortOption = "latest") => {
     const adsRef = collection(db, "ads");
     let q;
 
-    // If category is selected, filter by category
     if (category) {
       q = query(adsRef, where("category", "==", category));
     } else {
-      // Show all ads if no category is selected
       q = query(adsRef);
     }
 
@@ -50,7 +47,6 @@ const Home = () => {
     let ads = [];
     adDocs.forEach((doc) => ads.push({ ...doc.data(), id: doc.id }));
 
-    // Sorting logic
     if (sortOption === "low") {
       ads.sort((a, b) => a.price - b.price);
     } else if (sortOption === "high") {
@@ -63,17 +59,12 @@ const Home = () => {
   };
 
   useEffect(() => {
-    // Fetch ads whenever the selected category or sort option changes
     getAds(selectedCategory, sortOption);
   }, [selectedCategory, sortOption]);
 
   const checkScrollPosition = () => {
     const { scrollLeft, scrollWidth, clientWidth } = categoryRef.current;
-
-    // Show left arrow if scrolled right more than 0
     setShowLeftArrow(scrollLeft > 0);
-
-    // Show right arrow if not completely scrolled to the right
     setShowRightArrow(scrollLeft + clientWidth < scrollWidth);
   };
 
@@ -85,13 +76,10 @@ const Home = () => {
     categoryRef.current.scrollBy({ left: -200, behavior: "smooth" });
   };
 
-  // Function to handle category selection and toggle filter
   const handleCategoryClick = (category) => {
     if (selectedCategory === category) {
-      // If the category is already selected, reset the filter
       setSelectedCategory(null);
     } else {
-      // Otherwise, set the clicked category as the selected one
       setSelectedCategory(category);
     }
   };
@@ -101,86 +89,60 @@ const Home = () => {
       <style>
         {`
           body {
-            background-color: #fdfdfd; /* Off-white background for the entire page */
-            color: #333; /* Dark text for readability */
+            background-color: #fdfdfd;
+            color: #333;
           }
           .category-container {
             position: relative;
+            display: flex;
+            align-items: center;
+            overflow-x: auto;
+            padding-bottom: 10px;
+            gap: 20px;
           }
           .category-card {
-            min-width: 150px;
-            height: 150px;
             display: flex;
-            flex-direction: column;
             align-items: center;
-            justify-content: center;
-            border-radius: 50%; /* Makes the cards circular */
-            background-color: #ffffff; /* White background for category cards */
-            transition: border 0.3s;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); /* Soft shadow for depth */
+            background-color: #ffffff;
+            border-radius: 8px; /* Rounded edges */
+            padding: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            transition: border 0.3s, background-color 0.3s;
+            cursor: pointer;
+            margin-right: 10px;
           }
-          .category-image {
+          .category-card:hover {
+            background-color: #f0f0f0;
+          }
+          .category-image-container {
             width: 50px;
             height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%; /* Makes it circular */
+            background-color: #eee; /* Light background for images */
+            margin-right: 15px; /* Space between image and text */
+            flex-shrink: 0;
+          }
+          .category-image {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
             object-fit: cover;
-            border-radius: 50%;
           }
-          .d-flex {
-            scrollbar-width: none; /* For Firefox */
-          }
-          .d-flex::-webkit-scrollbar {
-            display: none; /* For Chrome, Safari, and Opera */
-          }
-          .arrow-right, .arrow-left {
-            position: absolute;
-            top: 50%;
-            transform: translateY(-50%);
-            background-color: rgba(0, 0, 0, 0.7); /* Dark background for arrows */
-            color: white;
-            border: none;
-            padding: 10px;
-            border-radius: 50%;
-            cursor: pointer;
-            opacity: 0;
-            transition: opacity 0.3s;
-            z-index: 10;
-          }
-          .arrow-right {
-            right: 10px;
-          }
-          .arrow-left {
-            left: 10px;
-          }
-          .category-container:hover .arrow-right, .category-container:hover .arrow-left {
-            opacity: 1;
+          .category-label {
+            font-size: 16px;
+            font-weight: bold;
+            color: #333;
           }
           .selected-category {
-            border: 3px solid blue !important; /* Blue outline for the selected category, with !important to ensure it applies */
-          }
-
-          /* Dropdown Customization */
-          .dropdown-custom {
-            width: 200px; /* Make the dropdown smaller */
-            border-radius: 20px; /* Rounded corners */
-            padding: 8px 12px;
-            background-color: #ffffff; /* White background for the dropdown */
-            border: 1px solid #ccc; /* Add a light border */
-            transition: all 0.3s ease; /* Smooth transition */
-          }
-
-          .dropdown-custom:hover {
-            background-color: #e6e6e6; /* Slightly darker on hover */
-            border-color: #888; /* Darker border on hover */
-          }
-
-          .dropdown-custom:focus {
-            outline: none;
-            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.2); /* Shadow on focus */
+            border: 3px solid blue !important;
           }
         `}
       </style>
 
-      <h3>Categories</h3>
+      <h3 className="text-2xl font-500 my-10  ">Categories</h3>
       <div
         className="category-container position-relative"
         onMouseEnter={() => checkScrollPosition()}
@@ -199,22 +161,24 @@ const Home = () => {
           {categories.map((category, index) => (
             <button
               key={index}
-              onClick={() => handleCategoryClick(category)} // Set the selected category on click
-              className="text-decoration-none me-3"
+              onClick={() => handleCategoryClick(category)}
+              className="text-decoration-none"
               style={{ border: "none", background: "none", padding: "0" }}
             >
               <div
-                className={`category-card text-center p-3 border rounded shadow-sm ${
+                className={`category-card ${
                   selectedCategory === category ? "selected-category" : ""
                 }`}
               >
-                <img
-                  src={`/images/${category}.jpg`} // Dynamically load images from public/images directory
-                  onError={(e) => (e.target.src = "https://static.thenounproject.com/png/2932881-200.png")} // Fallback image
-                  alt={category}
-                  className="category-image mb-2"
-                />
-                <h5>{category}</h5>
+                <div className="category-image-container">
+                  <img
+                    src={`/images/${category}.jpg`}
+                    onError={(e) => (e.target.src = "https://static.thenounproject.com/png/2932881-200.png")}
+                    alt={category}
+                    className="category-image"
+                  />
+                </div>
+                <span className="category-label">{category}</span>
               </div>
             </button>
           ))}
@@ -226,7 +190,6 @@ const Home = () => {
         )}
       </div>
 
-      {/* Sorting Dropdown */}
       {selectedCategory && (
         <div className="mb-4">
           <h5>Sort By:</h5>
@@ -242,7 +205,7 @@ const Home = () => {
         </div>
       )}
 
-      <h3>{selectedCategory ? `${selectedCategory} Listings` : "Recent Listings"}</h3>
+      <h3 className="text-2xl font-500 my-10  ">{selectedCategory ? `${selectedCategory} Listings` : "Recent Listings"}</h3>
       <div className="row">
         {ads.map((ad) => (
           <div className="col-sm-6 col-md-4 col-xl-3 mb-3" key={ad.id}>

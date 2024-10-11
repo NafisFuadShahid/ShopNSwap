@@ -1,4 +1,4 @@
-/* General card styling for AdCard */
+
 .card {
   background-color: #ffffff; /* White background for cards */
   border-radius: 10px; /* Rounded corners */
@@ -85,7 +85,7 @@
   background-color: #ffffff; /* Same background for consistency */
   border-radius: 10px;
   padding: 20px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  
   transition: transform 0.3s ease;
 }
 
