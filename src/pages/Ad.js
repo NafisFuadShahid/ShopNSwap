@@ -1,11 +1,15 @@
 import React, { useState, useEffect } from "react";
-import { useParams, useNavigate, Link, useLocation } from "react-router-dom";
+import { useParams, useNavigate, Link } from "react-router-dom";
 import { deleteDoc, doc, getDoc, updateDoc } from "firebase/firestore";
 import { auth, db, storage } from "../firebaseConfig";
 import { ref, deleteObject } from "firebase/storage";
-import { AiOutlineHeart, AiFillHeart, AiFillStar, AiOutlineStar } from "react-icons/ai";
-import { FaTrashAlt, FaUserCircle, FaPhoneAlt, FaComments } from "react-icons/fa";
-import { FiPhoneCall } from "react-icons/fi";
+import { AiOutlineStar, AiFillStar } from "react-icons/ai";
+import {
+  FaTrashAlt,
+  FaUserCircle,
+  FaPhoneAlt,
+  FaComments,
+} from "react-icons/fa";
 import Moment from "react-moment";
 import useSnapshot from "../utils/useSnapshot";
 import { toggleFavorite } from "../utils/fav";
@@ -13,13 +17,11 @@ import Sold from "../components/Sold";
 
 const Ad = () => {
   const { id } = useParams();
-  const location = useLocation();
   const navigate = useNavigate();
   const [ad, setAd] = useState();
   const [idx, setIdx] = useState(0);
   const [seller, setSeller] = useState();
   const [showNumber, setShowNumber] = useState(false);
-
   const { val } = useSnapshot("favorites", id);
 
   const getAd = async () => {
@@ -27,10 +29,8 @@ const Ad = () => {
     const docSnap = await getDoc(docRef);
     if (docSnap.exists()) {
       setAd(docSnap.data());
-
       const sellerRef = doc(db, "users", docSnap.data().postedBy);
       const sellerSnap = await getDoc(sellerRef);
-
       if (sellerSnap.exists()) {
         setSeller(sellerSnap.data());
       }
@@ -62,10 +62,10 @@ const Ad = () => {
   };
 
   return ad ? (
-    <div className="mt-5 container">
-      <div className="text-center mb-4">
+    <div className="container mx-auto mt-5 h-[1500px]">
+      {/* Fullscreen Image Carousel */}
+      <div className="relative mb-4 mb-[200px] ">
         {ad.isSold && <Sold singleAd={true} />}
-<<<<<<< HEAD
         <div className="relative overflow-hidden h-64 md:h-96 flex justify-center items-center">
           {ad.images.map((image, i) => (
             <div
@@ -119,167 +119,72 @@ const Ad = () => {
                 className="text-gray-400 cursor-pointer"
               />
             )}
-=======
-        <div id="carouselExample" className="carousel slide">
-          <div className="carousel-inner">
-            {ad.images.map((image, i) => (
-              <div
-                className={`carousel-item ${idx === i ? "active" : ""}`}
-                key={i}
-              >
-                <img
-                  src={image.url}
-                  className="d-block w-100"
-                  alt={ad.title}
-                  style={{ maxHeight: "500px", objectFit: "contain" }}
-                />
-                <button
-                  className="carousel-control-prev"
-                  type="button"
-                  data-bs-target="#carouselExample"
-                  data-bs-slide="prev"
-                  onClick={() => setIdx(i)}
-                >
-                  <span
-                    className="carousel-control-prev-icon"
-                    aria-hidden="true"
-                  ></span>
-                  <span className="visually-hidden">Previous</span>
-                </button>
-                <button
-                  className="carousel-control-next"
-                  type="button"
-                  data-bs-target="#carouselExample"
-                  data-bs-slide="next"
-                  onClick={() => setIdx(i)}
-                >
-                  <span
-                    className="carousel-control-next-icon"
-                    aria-hidden="true"
-                  ></span>
-                  <span className="visually-hidden">Next</span>
-                </button>
-              </div>
-            ))}
           </div>
-        </div>
-      </div>
+          <h3 className="text-lg font-medium my-2">{ad.title}</h3>
+          <p className="text-gray-600 mb-4">{ad.description}</p>
 
-      <div className="row d-flex align-items-stretch">
-        {/* First card: Price and details */}
-        <div className="col-md-6 d-flex">
-          <div className="card mb-4 h-100 w-100">
-            <div className="card-body">
-              <div className="d-flex justify-content-between align-items-center">
-                <h5 className="card-title">
-                  BDT. {Number(ad.price).toLocaleString()}
-                </h5>
-                {val?.users?.includes(auth.currentUser?.uid) ? (
-                  <AiFillStar
-                    size={30}
-                    onClick={() => toggleFavorite(val.users, id)}
-                    className="text-warning cursor-pointer"
+          <div className="flex justify-between items-center text-sm text-gray-500">
+            <span>{ad.location}</span>
+            <Moment fromNow>{ad.publishedAt.toDate()}</Moment>
+          </div>
+          {ad.postedBy === auth.currentUser?.uid && (
+            <FaTrashAlt
+              className="text-red-500 cursor-pointer mt-4"
+              onClick={deleteAd}
+            />
+          )}
+        </div>
+
+        {/* Seller Information Card */}
+        <div className="absolute right-40 top-100 bg-white p-6 w-[30%] shadow-lg mb-100 flex rounded-lg">
+          <div>
+            <h3 className="text-xl font-medium">Seller Information</h3>
+            <Link to={`/profile/${ad.postedBy}`}>
+              <div className="flex items-center mt-4">
+                {seller?.photoUrl ? (
+                  <img
+                    src={seller.photoUrl}
+                    alt={seller.name}
+                    className="w-12 h-12 rounded-full mr-3"
                   />
                 ) : (
-                  <AiOutlineStar
-                    size={30}
-                    onClick={() => toggleFavorite(val.users, id)}
-                  />
+                  <FaUserCircle size={48} className="text-gray-400" />
                 )}
+                <span className="text-lg font-medium">{seller?.name}</span>
               </div>
-              <h6 className="card-subtitle mb-2">{ad.title}</h6>
-              <p className="card-text">{ad.description}</p>
-              {ad.condition && (
-                <p className="card-text">
-                  Condition: <strong>{ad.condition}</strong>
-                </p>
-              )}
-              <div className="d-flex justify-content-between">
-                <p className="card-text">
-                  {ad.location} -{" "}
-                  <small>
-                    <Moment fromNow>{ad.publishedAt.toDate()}</Moment>
-                  </small>
-                </p>
-                {ad.postedBy === auth.currentUser?.uid && (
-                  <FaTrashAlt
-                    style={{ height: '20px', width: '30px' }}
-                    onClick={deleteAd}
-                  />
-                )}
-              </div>
-            </div>
->>>>>>> f28f3d3979f351030be47e83952a9d19b9451ef6
+            </Link>
           </div>
-        </div>
-
-        {/* Second card: Seller information */}
-        <div className="col-md-6 d-flex">
-          <div className="card mb-4 h-100 w-100">
-            <div className="card-body">
-              <h5 className="card-title">Seller Description</h5>
-              <Link to={`/profile/${ad.postedBy}`}>
-                <div className="d-flex align-items-center">
-                  {seller?.photoUrl ? (
-                    <img
-                      src={seller.photoUrl}
-                      alt={seller.name}
-                      style={{
-                        width: "50px",
-                        height: "50px",
-                        borderRadius: "50%",
-                        marginRight: "10px",
-                      }}
-                    />
-                  ) : (
-                    <FaUserCircle size={30} className="me-2" />
-                  )}
-                  <h6>{seller?.name}</h6>
-                </div>
-              </Link>
-            </div>
-            <div>
-              {auth.currentUser ? (
-                <div className="text-center">
-                  {showNumber ? (
-                    <p>
-                      <FiPhoneCall size={20} /> {ad.contact}
-                    </p>
-                  ) : (
-                    <div
-                      className="icon-container"
-                      onClick={() => setShowNumber(true)}
-                      style={{ cursor: "pointer" }}
-                    >
-                      <FaPhoneAlt
-                        size={40}
-                        className="text-primary"
-                        style={{ transition: "transform 0.3s", marginBottom: "10px" }}
-                      />
-                      <p>Show Contact Info</p>
-                    </div>
-                  )}
-                  <br />
-                  {ad.postedBy !== auth.currentUser?.uid && (
-                    <div
-                      className="icon-container"
-                      style={{ cursor: "pointer" }}
-                    >
-                      <FaComments
-                        size={40}
-                        className="text-primary"
-                        style={{ transition: "transform 0.3s" }}
-                      />
-                      <p>Chat with Seller</p>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <p className="text-center">
-                  Please <Link to="/login">login</Link> to view contact info.
-                </p>
-              )}
-            </div>
+          <div className="mt-6 text-center">
+            {auth.currentUser ? (
+              <>
+                {showNumber ? (
+                  <p className="text-lg font-bold">
+                    <FaPhoneAlt className="inline mr-2" /> {ad.contact}
+                  </p>
+                ) : (
+                  <button
+                    className="mt-4 w-full inline-block text-center text-white bg-gradient-to-r from-purple-400 to-indigo-500 hover:from-indigo-500 hover:to-purple-400 focus:ring-4 focus:outline-none focus:ring-blue-300 font-semibold rounded-lg text-sm px-4 py-2 transition-transform transform hover:scale-105 shadow-lg hover:shadow-xl"
+                    onClick={() => setShowNumber(true)}
+                  >
+                    Show Contact Info
+                  </button>
+                )}
+                <br />
+                {ad.postedBy !== auth.currentUser?.uid && (
+                  <button className="mt-4 w-full inline-block text-center text-white bg-gradient-to-r from-purple-400 to-indigo-500 hover:from-indigo-500 hover:to-purple-400 focus:ring-4 focus:outline-none focus:ring-blue-300 font-semibold rounded-lg text-sm px-4 py-2 transition-transform transform hover:scale-105 shadow-lg hover:shadow-xl">
+                    Chat with Seller
+                  </button>
+                )}
+              </>
+            ) : (
+              <p>
+                Please{" "}
+                <Link to="/login" className="text-blue-500 underline">
+                  login
+                </Link>{" "}
+                to view contact info.
+              </p>
+            )}
           </div>
         </div>
       </div>
