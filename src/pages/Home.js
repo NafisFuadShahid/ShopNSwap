@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { collection, orderBy, query, where, getDocs } from "firebase/firestore";
+import { collection, getDocs, query, where } from "firebase/firestore";
 import { db } from "../firebaseConfig";
 import AdCard from "../components/AdCard";
 import { FaChevronRight, FaChevronLeft } from "react-icons/fa";
@@ -101,8 +101,14 @@ const Home = () => {
             gap: 20px;
           }
           .category-card {
+<<<<<<< HEAD
+=======
+            width: 120px; /* Ensures square shape */
+            height: 120px; /* Ensures square shape */
+>>>>>>> ee9c4bb5745120291516cc894fbf78d5569adcc7
             display: flex;
             align-items: center;
+<<<<<<< HEAD
             background-color: #ffffff;
             border-radius: 8px; /* Rounded edges */
             padding: 10px;
@@ -130,6 +136,20 @@ const Home = () => {
             height: 100%;
             border-radius: 50%;
             object-fit: cover;
+=======
+            justify-content: center;
+            border-radius: 8px; /* Slightly rounded edges */
+            background-color: #ffffff; /* White background for category cards */
+            transition: border 0.3s;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Soft shadow for depth */
+            margin-right: 10px; /* Spacing between category cards */
+          }
+          .category-image {
+            width: 60px;
+            height: 60px;
+            object-fit: cover;
+            margin-bottom: 8px;
+>>>>>>> ee9c4bb5745120291516cc894fbf78d5569adcc7
           }
           .category-label {
             font-size: 16px;
@@ -161,7 +181,11 @@ const Home = () => {
           {categories.map((category, index) => (
             <button
               key={index}
+<<<<<<< HEAD
               onClick={() => handleCategoryClick(category)}
+=======
+              onClick={() => handleCategoryClick(category)} // Set the selected category on click
+>>>>>>> ee9c4bb5745120291516cc894fbf78d5569adcc7
               className="text-decoration-none"
               style={{ border: "none", background: "none", padding: "0" }}
             >
@@ -170,6 +194,7 @@ const Home = () => {
                   selectedCategory === category ? "selected-category" : ""
                 }`}
               >
+<<<<<<< HEAD
                 <div className="category-image-container">
                   <img
                     src={`/images/${category}.jpg`}
@@ -179,6 +204,15 @@ const Home = () => {
                   />
                 </div>
                 <span className="category-label">{category}</span>
+=======
+                <img
+                  src={`/images/${category}.jpg`} // Dynamically load images from public/images directory
+                  onError={(e) => (e.target.src = "https://static.thenounproject.com/png/2932881-200.png")} // Fallback image
+                  alt={category}
+                  className="category-image"
+                />
+                <h6>{category}</h6> {/* Adjusted text size to fit the square design */}
+>>>>>>> ee9c4bb5745120291516cc894fbf78d5569adcc7
               </div>
             </button>
           ))}
