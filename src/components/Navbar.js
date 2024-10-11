@@ -4,14 +4,20 @@ import React, { useContext, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { AuthContext } from "../context/auth";
 import { auth, db } from "../firebaseConfig";
+<<<<<<< HEAD
 import { FaUserAlt, FaSearch } from "react-icons/fa";
+=======
+import { Dropdown } from "react-bootstrap";
+import { FaUserAlt, FaShoppingCart, FaSearch } from "react-icons/fa";
+import { BiLogOut } from "react-icons/bi"; // Import the logout icon
+import { AiOutlineFileSearch } from "react-icons/ai"; // Import the my orders icon
+>>>>>>> f28f3d3979f351030be47e83952a9d19b9451ef6
 import 'bootstrap/dist/css/bootstrap.min.css';
 
 const Navbar = () => {
   const { user } = useContext(AuthContext);
   const navigate = useNavigate();
   const [photoUrl, setPhotoUrl] = useState(null);
-  const [dropdownOpen, setDropdownOpen] = useState(false); // State to track dropdown visibility
 
   useEffect(() => {
     if (user) {
@@ -39,11 +45,26 @@ const Navbar = () => {
     }
   };
 
-  const toggleDropdown = () => {
-    setDropdownOpen(!dropdownOpen); // Toggle dropdown visibility
+  const [hoveredButton, setHoveredButton] = useState(null);
+
+  const handleMouseEnter = (buttonName) => {
+    setHoveredButton(buttonName);
   };
 
+  const handleMouseLeave = () => {
+    setHoveredButton(null);
+  };
+
+  const buttonStyle = (buttonName) => ({
+    padding: "10px",
+    color: hoveredButton === buttonName ? "#fff" : "#0056b3",
+    fontWeight: "bold",
+    backgroundColor: hoveredButton === buttonName ? "#007bff" : "#f0f0f0",
+    transition: "background-color 0.3s ease, color 0.3s ease",
+  });
+
   return (
+<<<<<<< HEAD
     <nav className="bg-white border-gray-200 dark:bg-gray-900">
       <div className="max-w-screen-xl flex flex-wrap items-center justify-between mx-auto p-4">
         <Link to="/" className="flex items-center space-x-3 rtl:space-x-reverse">
@@ -163,6 +184,150 @@ const Navbar = () => {
           <Link className="text-gray-900 hover:text-blue-700 dark:text-white dark:hover:text-blue-500" to="/donate">
             Donate
           </Link>
+=======
+    <nav className="navbar navbar-expand-md navbar-light bg-white shadow-sm sticky-top">
+      <div className="container">
+        {/* Logo */}
+        <Link className="navbar-brand fw-bold text-primary" to="/" style={{ color: "#0056b3", fontSize: "24px" }}>
+          ShopNSwap
+        </Link>
+
+        {/* Toggler/collapsible Button */}
+        <button
+          className="navbar-toggler"
+          type="button"
+          data-bs-toggle="collapse"
+          data-bs-target="#navbarContent"
+          aria-controls="navbarContent"
+          aria-expanded="false"
+          aria-label="Toggle navigation"
+        >
+          <span className="navbar-toggler-icon"></span>
+        </button>
+
+        {/* Collapsible content */}
+        <div className="collapse navbar-collapse" id="navbarContent">
+          <ul className="navbar-nav me-auto mb-2 mb-lg-0">
+            <li className="nav-item">
+              <Link
+                className="nav-link"
+                to="/sell"
+                style={buttonStyle("sell")}
+                onMouseEnter={() => handleMouseEnter("sell")}
+                onMouseLeave={handleMouseLeave}
+              >
+                Sell
+              </Link>
+            </li>
+            <li className="nav-item">
+              <Link
+                className="nav-link"
+                to="/buy"
+                style={buttonStyle("buy")}
+                onMouseEnter={() => handleMouseEnter("buy")}
+                onMouseLeave={handleMouseLeave}
+              >
+                Buy
+              </Link>
+            </li>
+            <li className="nav-item">
+              <Link
+                className="nav-link"
+                to="/swap"
+                style={buttonStyle("swap")}
+                onMouseEnter={() => handleMouseEnter("swap")}
+                onMouseLeave={handleMouseLeave}
+              >
+                Swap
+              </Link>
+            </li>
+            <li className="nav-item">
+              <Link
+                className="nav-link"
+                to="/donate"
+                style={buttonStyle("donate")}
+                onMouseEnter={() => handleMouseEnter("donate")}
+                onMouseLeave={handleMouseLeave}
+              >
+                Donate
+              </Link>
+            </li>
+          </ul>
+
+          <div className="d-flex align-items-center">
+            {/* Search bar */}
+            <div className="input-group" style={{ marginRight: "80px", width: "450px" }}>
+              <input
+                type="text"
+                placeholder="Search..."
+                className="form-control"
+                style={{
+                  border: "2px solid #007bff",
+                  borderRadius: "30px 0 0 30px",
+                  padding: "7px 10px",
+                  color: "#333",
+                }}
+              />
+              <span
+                className="input-group-text"
+                style={{
+                  backgroundColor: "#007bff",
+                  borderColor: "#007bff",
+                  color: "white",
+                  borderRadius: "0 30px 30px 0",
+                  cursor: "pointer",
+                }}
+              >
+                <FaSearch />
+              </span>
+            </div>
+
+            {/* Cart button */}
+            <button className="btn btn-primary" style={{ backgroundColor: "#007bff", borderColor: "#007bff", marginRight: "-15px" }}>
+              <FaShoppingCart size={20} />
+            </button>
+
+            {/* User dropdown */}
+            {user ? (
+              <Dropdown>
+                <Dropdown.Toggle id="dropdown-basic" variant="light" className="d-flex align-items-center border-0 bg-transparent ms-3">
+                  {photoUrl ? (
+                    <img
+                      src={photoUrl}
+                      alt={user.name || "Profile Avatar"}
+                      className="rounded-circle"
+                      style={{ width: "40px", height: "40px", objectFit: "cover" }}
+                    />
+                  ) : (
+                    <FaUserAlt size={30} className="text-secondary" />
+                  )}
+                </Dropdown.Toggle>
+
+                <Dropdown.Menu>
+                  <Dropdown.Item as={Link} to={`/profile/${user.uid}`} className="d-flex align-items-center">
+                    <FaUserAlt className="me-2" /> Profile
+                  </Dropdown.Item>
+                  <Dropdown.Item as={Link} to={`/orders`} className="d-flex align-items-center">
+                    <AiOutlineFileSearch className="me-2" /> My Orders
+                  </Dropdown.Item>
+                  <Dropdown.Divider />
+                  <Dropdown.Item onClick={handleSignout} className="d-flex align-items-center">
+                    <BiLogOut className="me-2" /> Logout
+                  </Dropdown.Item>
+                </Dropdown.Menu>
+              </Dropdown>
+            ) : (
+              <div className="d-flex">
+                <Link className="btn btn-outline-primary me-2" to="/auth/register">
+                  Register
+                </Link>
+                <Link className="btn btn-outline-primary" to="/auth/login">
+                  Login
+                </Link>
+              </div>
+            )}
+          </div>
+>>>>>>> f28f3d3979f351030be47e83952a9d19b9451ef6
         </div>
       </div>
     </nav>
