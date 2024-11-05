@@ -1,4 +1,4 @@
-
+/* Card Styles */
 .card {
   background-color: #ffffff; /* White background for cards */
   border-radius: 10px; /* Rounded corners */
@@ -31,7 +31,7 @@
   color: #666; /* Lighter color for better contrast */
 }
 
-/* Ripple effect for buttons */
+/* Button with Ripple Effect */
 .button {
   position: relative;
   overflow: hidden;
@@ -80,12 +80,11 @@
   transform: scale(0.95); /* Scale down on click */
 }
 
-/* Profile page styling */
+/* Profile Card Styles */
 .profile-card {
   background-color: #ffffff; /* Same background for consistency */
   border-radius: 10px;
   padding: 20px;
-  
   transition: transform 0.3s ease;
 }
 
@@ -178,3 +177,35 @@ h4 {
   transform: rotate(360deg); /* Full rotation on hover */
 }
 
+/* Button Styles */
+.btn {
+  margin: 10px;
+  padding: 15px 40px;
+  border: none;
+  outline: none;
+  color: #FFF;
+  cursor: pointer;
+  position: relative;
+  z-index: 0;
+  border-radius: 12px;
+  background-color: #333;
+  transition: 0.3s;
+}
+
+.btn::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, #9B51E0, #56CCF2); /* Gradient background */
+  z-index: -1;
+  border-radius: 10px;
+  transition: 0.3s;
+}
+
+/* Optional: Add a hover effect */
+.btn:hover::after {
+  filter: brightness(1.1); /* Slightly brightens the gradient on hover */
+}

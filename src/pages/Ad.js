@@ -111,14 +111,15 @@ const Ad = () => {
       </div>
 
       <div className="row d-flex align-items-stretch">
-        {/* First card: Price and details */}
+        {/* Product Details */}
         <div className="col-md-6 d-flex">
-          <div className="card mb-4 h-100 w-100">
+          <div className="card mb-4 h-100 w-100 shadow-sm rounded">
             <div className="card-body">
-              <div className="d-flex justify-content-between align-items-center">
-                <h5 className="card-title">
-                  BDT. {Number(ad.price).toLocaleString()}
-                </h5>
+              <h5 className="card-title mb-2 text-primary">
+                BDT. {Number(ad.price).toLocaleString()}
+              </h5>
+              <div className="d-flex justify-content-between align-items-center mb-3">
+                <h6 className="card-subtitle text-muted">{ad.title}</h6>
                 {val?.users?.includes(auth.currentUser?.uid) ? (
                   <AiFillStar
                     size={30}
@@ -129,100 +130,97 @@ const Ad = () => {
                   <AiOutlineStar
                     size={30}
                     onClick={() => toggleFavorite(val.users, id)}
+                    className="cursor-pointer"
                   />
                 )}
               </div>
-              <h6 className="card-subtitle mb-2">{ad.title}</h6>
-              <p className="card-text">{ad.description}</p>
+              <p className="card-text mb-2">{ad.description}</p>
               {ad.condition && (
                 <p className="card-text">
                   Condition: <strong>{ad.condition}</strong>
                 </p>
               )}
-              <div className="d-flex justify-content-between">
-                <p className="card-text">
-                  {ad.location} -{" "}
-                  <small>
-                    <Moment fromNow>{ad.publishedAt.toDate()}</Moment>
-                  </small>
-                </p>
-                {ad.postedBy === auth.currentUser?.uid && (
-                  <FaTrashAlt
-                    style={{ height: '20px', width: '30px' }}
-                    onClick={deleteAd}
-                  />
-                )}
-              </div>
+              <p className="card-text">
+                {ad.location} -{" "}
+                <small>
+                  <Moment fromNow>{ad.publishedAt.toDate()}</Moment>
+                </small>
+              </p>
+              {ad.postedBy === auth.currentUser?.uid && (
+                <FaTrashAlt
+                  style={{ height: '20px', width: '30px', color: "red", cursor: "pointer" }}
+                  onClick={deleteAd}
+                />
+              )}
             </div>
           </div>
         </div>
 
-        {/* Second card: Seller information */}
+        {/* Seller Information */}
         <div className="col-md-6 d-flex">
-          <div className="card mb-4 h-100 w-100">
+          <div className="card mb-4 h-100 w-100 shadow-sm rounded">
             <div className="card-body">
-              <h5 className="card-title">Seller Description</h5>
+              <h5 className="card-title text-primary">Seller Description</h5>
               <Link to={`/profile/${ad.postedBy}`}>
-                <div className="d-flex align-items-center">
+                <div className="d-flex align-items-center mb-3">
                   {seller?.photoUrl ? (
                     <img
                       src={seller.photoUrl}
                       alt={seller.name}
-                      style={{
-                        width: "50px",
-                        height: "50px",
-                        borderRadius: "50%",
-                        marginRight: "10px",
-                      }}
+                      className="rounded-circle me-3"
+                      style={{ width: "50px", height: "50px" }}
                     />
                   ) : (
-                    <FaUserCircle size={30} className="me-2" />
+                    <FaUserCircle size={40} className="me-3" />
                   )}
-                  <h6>{seller?.name}</h6>
+                  <h6 className="mb-0">{seller?.name}</h6>
                 </div>
               </Link>
-            </div>
-            <div>
-              {auth.currentUser ? (
-                <div className="text-center">
-                  {showNumber ? (
-                    <p>
-                      <FiPhoneCall size={20} /> {ad.contact}
-                    </p>
-                  ) : (
-                    <div
-                      className="icon-container"
-                      onClick={() => setShowNumber(true)}
-                      style={{ cursor: "pointer" }}
+              <div className="text-center">
+                {auth.currentUser ? (
+                  <>
+                    {showNumber ? (
+                      <p className="text-muted">
+                        <FiPhoneCall size={20} /> {ad.contact}
+                      </p>
+                    ) : (
+                      <>
+                        <button
+                          className="btn"
+                          onClick={() => setShowNumber(true)}
+                          style={{
+                            position: "relative",
+                            zIndex: 1,
+                            color: "#FFF",
+                            borderRadius: "10px",
+                            margin: "10px",
+                          }}
+                        >
+                          <FaPhoneAlt size={24} className="mb-1" />
+                          Show Contact Info
+                        </button>
+                      </>
+                    )}
+                    <button
+                      className="btn"
+                      style={{
+                        position: "relative",
+                        zIndex: 1,
+                        color: "#FFF",
+                        borderRadius: "10px",
+                        margin: "10px",
+                      }}
                     >
-                      <FaPhoneAlt
-                        size={40}
-                        className="text-primary"
-                        style={{ transition: "transform 0.3s", marginBottom: "10px" }}
-                      />
-                      <p>Show Contact Info</p>
-                    </div>
-                  )}
-                  <br />
-                  {ad.postedBy !== auth.currentUser?.uid && (
-                    <div
-                      className="icon-container"
-                      style={{ cursor: "pointer" }}
-                    >
-                      <FaComments
-                        size={40}
-                        className="text-primary"
-                        style={{ transition: "transform 0.3s" }}
-                      />
-                      <p>Chat with Seller</p>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <p className="text-center">
-                  Please <Link to="/login">login</Link> to view contact info.
-                </p>
-              )}
+                      <FaComments size={24} className="mb-1" />
+                      Chat with Seller
+                    </button>
+                  </>
+                ) : (
+                  <p className="text-center">
+                    Please <Link to="/login">login</Link> to view contact info.
+                  </p>
+                )}
+              </div>
             </div>
           </div>
         </div>
