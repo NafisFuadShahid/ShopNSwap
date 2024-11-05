@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { AiOutlineHeart, AiFillHeart, AiOutlineStar } from "react-icons/ai";
 import Moment from "react-moment";
@@ -11,9 +11,20 @@ const AdCard = ({ ad }) => {
   const { val } = useSnapshot("favorites", ad.id);
   const adLink = `/${ad.category.toLowerCase()}/${ad.id}`;
   const isFavorite = val?.users?.includes(auth.currentUser?.uid);
+  const [isAnimating, setIsAnimating] = useState(false);
+
+  const handleFavoriteClick = () => {
+    setIsAnimating(true);
+    toggleFavorite(val.users, ad.id);
+    
+    // Reset animation state after the animation completes
+    setTimeout(() => {
+      setIsAnimating(false);
+    }, 300); // Duration should match the CSS animation duration
+  };
 
   return (
-    <div className="rounded-lg w-full max-w-md bg-white border border-gray-200 shadow-sm dark:bg-gray-800 dark:border-gray-700 mb-3 mx-1 relative">
+    <div className="rounded-lg w-full max-w-md bg-white border border-gray-200 shadow-sm dark:bg-gray-800 dark:border-gray-700 mb-3 mx-1 relative transition-transform duration-300 hover:transform hover:-translate-y-1 hover:shadow-lg">
       {ad.isSold && <Sold />}
 
       <Link to={adLink}>
@@ -36,19 +47,16 @@ const AdCard = ({ ad }) => {
             </h5>
           </Link>
           <div>
-            {isFavorite ? (
-              <AiFillHeart
-                size={20}
-                onClick={() => toggleFavorite(val.users, ad.id)}
-                className="text-pink-500 cursor-pointer"
-              />
-            ) : (
-              <AiOutlineHeart
-                size={20}
-                onClick={() => toggleFavorite(val?.users || [], ad.id)}
-                className="text-gray-300 cursor-pointer"
-              />
-            )}
+            <div
+              onClick={handleFavoriteClick}
+              className={`cursor-pointer transition-transform duration-300 ${isAnimating ? 'animate-heart' : ''}`}
+            >
+              {isFavorite ? (
+                <AiFillHeart size={27} className="text-pink-500" />
+              ) : (
+                <AiOutlineHeart size={27} className="text-gray-300" />
+              )}
+            </div>
           </div>
         </div>
 
