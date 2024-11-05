@@ -103,33 +103,37 @@ const Navbar = () => {
                   </span>
                 </div>
                 <ul className="py-2">
-                  <li>
-                    <Link
-                      to={`/profile/${user.uid}`}
-                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 dark:text-gray-200 dark:hover:text-white"
-                    >
-                      Profile
-                    </Link>
-                  </li>
-                  <li>
+  <li>
+    <Link
+      to={`/profile/${user.uid}`}
+      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 dark:text-gray-200 dark:hover:text-white"
+      onClick={toggleDropdown} // Close dropdown on click
+    >
+      Profile
+    </Link>
+  </li>
+  <li>
+    <Link
+      to="/favorites"
+      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 dark:text-gray-200 dark:hover:text-white"
+      onClick={toggleDropdown} // Close dropdown on click
+    >
+      My Favorites
+    </Link>
+  </li>
+  <li>
+    <button
+      onClick={() => {
+        handleSignout();
+        toggleDropdown(); // Close dropdown after sign out
+      }}
+      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 dark:text-gray-200 dark:hover:text-white"
+    >
+      Sign out
+    </button>
+  </li>
+</ul>
 
-                    <Link
-                      to="/favorites"
-                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 dark:text-gray-200 dark:hover:text-white"
-                    >
-                      My Favorites
-                    </Link>
-                    
-                  </li>
-                  <li>
-                    <button
-                      onClick={handleSignout}
-                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 dark:text-gray-200 dark:hover:text-white"
-                    >
-                      Sign out
-                    </button>
-                  </li>
-                </ul>
               </div>
             </div>
           ) : (
