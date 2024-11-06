@@ -161,6 +161,12 @@ const Chat = () => {
           <>
             <div className="chat-header">
               <h3>{chat.other.name}</h3>
+              <Link
+                className="product-name-link"
+                to={`/${chat.ad.category.toLowerCase()}/${chat.ad.adId}`}
+              >
+                {chat.ad.title}
+              </Link>
             </div>
             <div className="chat-ad-details">
               <img
@@ -172,12 +178,6 @@ const Chat = () => {
                 <h6>{chat.ad.title}</h6>
                 <small>{chat.ad.price}</small>
               </div>
-              <Link
-                className="view-ad-button"
-                to={`/${chat.ad.category.toLowerCase()}/${chat.ad.adId}`}
-              >
-                View Ad
-              </Link>
             </div>
             <div className="messages-container">
               {msgs.map((msg, i) => (
@@ -206,7 +206,7 @@ const Chat = () => {
         }
         .users-container {
           width: 25%;
-          background: #f3f4f6;
+          background: rgba(138, 43, 226, 0.1); /* Transparent light purple */
           overflow-y: auto;
           padding: 20px;
           border-right: 1px solid #ddd;
@@ -221,7 +221,17 @@ const Chat = () => {
           text-align: center;
           padding: 10px;
           border-bottom: 1px solid #ddd;
-          background: #f3f4f6;
+          background: rgba(138, 43, 226, 0.1); /* Transparent light purple */
+        }
+        .product-name-link {
+          display: block;
+          margin-top: 5px;
+          font-weight: bold;
+          color: #4f46e5;
+          text-decoration: none;
+        }
+        .product-name-link:hover {
+          text-decoration: underline;
         }
         .chat-ad-details {
           display: flex;
@@ -238,17 +248,11 @@ const Chat = () => {
           flex-grow: 1;
           margin-left: 10px;
         }
-        .view-ad-button {
-          background: linear-gradient(to right, #a855f7, #4f46e5);
-          color: #fff;
-          padding: 5px 10px;
-          border-radius: 5px;
-          text-decoration: none;
-        }
         .messages-container {
           flex-grow: 1;
           overflow-y: auto;
           padding: 20px;
+          max-height: calc(100vh - 170px); /* Limits the message container height */
         }
         .no-chat-selected {
           display: flex;
