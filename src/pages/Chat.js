@@ -50,11 +50,9 @@ const Chat = () => {
     const docSnap = await getDoc(doc(db, "messages", id));
     if (docSnap.exists()) {
       if (docSnap.data().lastSender !== user1 && docSnap.data().lastUnread) {
-        {
-          await updateDoc(doc(db, "messages", id), {
-            lastUnread: false,
-          });
-        }
+        await updateDoc(doc(db, "messages", id), {
+          lastUnread: false,
+        });
       }
     }
 
@@ -110,7 +108,7 @@ const Chat = () => {
     setUsers(users);
 
     return () => {
-      unsubscribes.forEach((unsubcribe) => unsubcribe());
+      unsubscribes.forEach((unsubscribe) => unsubscribe());
     };
   };
 
@@ -145,11 +143,8 @@ const Chat = () => {
   };
 
   return (
-    <div className="row g-0">
-      <div
-        className="col-2 col-md-4 users_container"
-        style={{ borderRight: "1px solid #ddd" }}
-      >
+    <div className="chat-container">
+      <div className="users-container">
         {users.map((user, i) => (
           <User
             key={i}
@@ -161,37 +156,30 @@ const Chat = () => {
           />
         ))}
       </div>
-      <div className="col-10 col-md-8 position-relative">
+      <div className="chat-area">
         {chat ? (
           <>
-            <div
-              className="text-center mt-1"
-              style={{ borderBottom: "1px solid #ddd" }}
-            >
+            <div className="chat-header">
               <h3>{chat.other.name}</h3>
             </div>
-            <div className="p-2" style={{ borderBottom: "1px solid #ddd" }}>
-              <div className="d-flex align-items-center">
-                <img
-                  src={chat.ad.images[0].url}
-                  alt={chat.ad.title}
-                  style={{ width: "50px", height: "50px" }}
-                />
-                <div className="d-flex align-items-center justify-content-between flex-grow-1 ms-1">
-                  <div>
-                    <h6>{chat.ad.title}</h6>
-                    <small>{chat.ad.price}</small>
-                  </div>
-                  <Link
-                    className="btn btn-secondary btn-sm"
-                    to={`/${chat.ad.category.toLowerCase()}/${chat.ad.adId}`}
-                  >
-                    View Ad
-                  </Link>
-                </div>
+            <div className="chat-ad-details">
+              <img
+                src={chat.ad.images[0].url}
+                alt={chat.ad.title}
+                className="ad-image"
+              />
+              <div className="ad-info">
+                <h6>{chat.ad.title}</h6>
+                <small>{chat.ad.price}</small>
               </div>
+              <Link
+                className="view-ad-button"
+                to={`/${chat.ad.category.toLowerCase()}/${chat.ad.adId}`}
+              >
+                View Ad
+              </Link>
             </div>
-            <div className="messages overflow-auto">
+            <div className="messages-container">
               {msgs.map((msg, i) => (
                 <Message key={i} msg={msg} user1={user1} />
               ))}
@@ -203,11 +191,77 @@ const Chat = () => {
             />
           </>
         ) : (
-          <div className="text-center mt-5">
+          <div className="no-chat-selected">
             <h3>Select a user to start conversation</h3>
           </div>
         )}
       </div>
+
+      {/* Inline CSS Styles */}
+      <style jsx="true">{`
+        .chat-container {
+          display: flex;
+          height: 100vh;
+          background-color: #ffffff;
+        }
+        .users-container {
+          width: 25%;
+          background: #f3f4f6;
+          overflow-y: auto;
+          padding: 20px;
+          border-right: 1px solid #ddd;
+        }
+        .chat-area {
+          width: 75%;
+          display: flex;
+          flex-direction: column;
+          position: relative;
+        }
+        .chat-header {
+          text-align: center;
+          padding: 10px;
+          border-bottom: 1px solid #ddd;
+          background: #f3f4f6;
+        }
+        .chat-ad-details {
+          display: flex;
+          align-items: center;
+          padding: 10px;
+          border-bottom: 1px solid #ddd;
+        }
+        .ad-image {
+          width: 50px;
+          height: 50px;
+          border-radius: 5px;
+        }
+        .ad-info {
+          flex-grow: 1;
+          margin-left: 10px;
+        }
+        .view-ad-button {
+          background: linear-gradient(to right, #a855f7, #4f46e5);
+          color: #fff;
+          padding: 5px 10px;
+          border-radius: 5px;
+          text-decoration: none;
+        }
+        .messages-container {
+          flex-grow: 1;
+          overflow-y: auto;
+          padding: 20px;
+        }
+        .no-chat-selected {
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          height: 100%;
+          color: #6b7280;
+        }
+        .message-form {
+          padding: 10px;
+          background: #f3f4f6;
+        }
+      `}</style>
     </div>
   );
 };
