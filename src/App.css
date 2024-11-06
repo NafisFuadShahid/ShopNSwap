@@ -227,3 +227,7 @@ h4 {
 .animate-heart {
   animation: heartBeat 0.3s ease forwards;
 }
+
+.users_container{
+  height: 90vh;
+}
