@@ -1,37 +1,22 @@
 import React, { useState, useEffect, useRef } from "react";
-import { collection, orderBy, query, where, getDocs } from "firebase/firestore";
+import { collection, query, where, getDocs } from "firebase/firestore";
 import { db } from "../firebaseConfig";
 import AdCard from "../components/AdCard";
-import { FaChevronRight, FaChevronLeft } from "react-icons/fa";
+import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
 
 const categories = [
-  "Vehicles",
-  "Property",
-  "Electronics",
-  "Home",
-  "Fashion",
-  "Jobs",
-  "Services",
-  "Pets",
-  "Sports",
-  "Hobbies",
-  "Kids",
-  "Business",
-  "Health",
-  "Education",
-  "Travel",
-  "Events",
-  "Agriculture",
-  "Others",
+  "Vehicles", "Property", "Electronics", "Home", "Fashion", "Jobs", 
+  "Services", "Pets", "Sports", "Hobbies", "Kids", "Business", 
+  "Health", "Education", "Travel", "Events", "Agriculture", "Others"
 ];
 
 const Home = () => {
   const [ads, setAds] = useState([]);
-  const [selectedCategory, setSelectedCategory] = useState(null); // State to store the selected category
-  const [sortOption, setSortOption] = useState("latest"); // Default sort option is "Latest"
+  const [selectedCategory, setSelectedCategory] = useState(null);
+  const [sortOption, setSortOption] = useState("latest");
   const [showLeftArrow, setShowLeftArrow] = useState(false);
   const [showRightArrow, setShowRightArrow] = useState(true);
-  const categoryRef = useRef(null); // Reference to the category container
+  const categoryRef = useRef(null);
 
   const getAds = async (category = null, sortOption = "latest") => {
     const adsRef = collection(db, "ads");
@@ -62,26 +47,24 @@ const Home = () => {
     getAds(selectedCategory, sortOption);
   }, [selectedCategory, sortOption]);
 
-  const checkScrollPosition = () => {
-    const { scrollLeft, scrollWidth, clientWidth } = categoryRef.current;
-    setShowLeftArrow(scrollLeft > 0);
-    setShowRightArrow(scrollLeft + clientWidth < scrollWidth);
+  const handleCategoryClick = (category) => {
+    setSelectedCategory(selectedCategory === category ? null : category);
   };
 
   const scrollRight = () => {
     categoryRef.current.scrollBy({ left: 200, behavior: "smooth" });
+    updateArrowVisibility();
   };
 
   const scrollLeft = () => {
     categoryRef.current.scrollBy({ left: -200, behavior: "smooth" });
+    updateArrowVisibility();
   };
 
-  const handleCategoryClick = (category) => {
-    if (selectedCategory === category) {
-      setSelectedCategory(null);
-    } else {
-      setSelectedCategory(category);
-    }
+  const updateArrowVisibility = () => {
+    const { scrollLeft, scrollWidth, clientWidth } = categoryRef.current;
+    setShowLeftArrow(scrollLeft > 0);
+    setShowRightArrow(scrollLeft + clientWidth < scrollWidth);
   };
 
   return (
@@ -93,71 +76,102 @@ const Home = () => {
             color: #333;
           }
           .category-container {
-            position: relative;
             display: flex;
             align-items: center;
-            overflow-x: auto;
-            padding-bottom: 10px;
+            overflow-x: hidden;
             gap: 20px;
+            padding-bottom: 10px;
+            position: relative;
           }
-          .category-card {
-            display: flex;
-            align-items: center;
-            background-color: #ffffff;
-            border-radius: 8px; /* Rounded edges */
-            padding: 10px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            transition: border 0.3s, background-color 0.3s;
-            cursor: pointer;
-            margin-right: 10px;
-          }
-          .category-card:hover {
-            background-color: #f0f0f0;
-          }
-          .category-image-container {
-            width: 50px;
-            height: 50px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 50%; /* Makes it circular */
-            background-color: #eee; /* Light background for images */
-            margin-right: 15px; /* Space between image and text */
-            flex-shrink: 0;
-          }
-          .category-image {
-            width: 100%;
-            height: 100%;
-            border-radius: 50%;
-            object-fit: cover;
-          }
-          .category-label {
-            font-size: 16px;
-            font-weight: bold;
-            color: #333;
-          }
-          .selected-category {
-            border: 3px solid blue !important;
-          }
+.category-card {
+  display: flex;
+  align-items: center;
+  background-color: #ffffff;
+  border-radius: 12px;
+  padding: 15px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s, background-color 0.3s;
+  cursor: pointer;
+}
+
+.category-card:hover {
+  background-color: #e6f4ff; /* Lighter blue color on hover */
+  transform: translateY(-5px);
+}
+
+.category-image-container {
+  width: 50px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background-color: #eee;
+  margin-right: 15px;
+  flex-shrink: 0;
+}
+
+.category-image {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.category-label {
+  font-size: 16px;
+  font-weight: bold;
+  color: #333;
+}
+
+.selected-category {
+  border: 3px solid #007bff !important;
+}
+
+          .arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background-color: #ffffff; /* Default color */
+  color: #007bff; /* Default icon color */
+  border: none;
+  border-radius: 50%;
+  width: 35px;
+  height: 35px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.7;
+  transition: background-color 0.3s, opacity 0.3s;
+}
+
+.arrow:hover {
+  background-color: #007bff; /* Change to blue on hover */
+  color: white; /* Change icon color to white */
+  opacity: 1; /* Full opacity on hover */
+}
+
+.arrow-left {
+  left: -15px;
+}
+
+.arrow-right {
+  right: -15px;
+}
+
         `}
       </style>
 
-      <h3 className="text-2xl font-500 my-10  ">Categories</h3>
-      <div
-        className="category-container position-relative"
-        onMouseEnter={() => checkScrollPosition()}
-      >
+      <h3 className="text-2xl font-500 my-10">Categories</h3>
+
+      <div className="position-relative d-flex align-items-center">
         {showLeftArrow && (
-          <button className="arrow-left" onClick={scrollLeft}>
-            <FaChevronLeft size={24} />
+          <button className="arrow arrow-left" onClick={scrollLeft}>
+            <FaChevronLeft size={18} />
           </button>
         )}
-        <div
-          className="d-flex overflow-hidden mb-4"
-          ref={categoryRef}
-          style={{ overflowX: "auto" }}
-          onScroll={checkScrollPosition}
-        >
+        <div className="category-container" ref={categoryRef} onScroll={updateArrowVisibility}>
           {categories.map((category, index) => (
             <button
               key={index}
@@ -184,8 +198,8 @@ const Home = () => {
           ))}
         </div>
         {showRightArrow && (
-          <button className="arrow-right" onClick={scrollRight}>
-            <FaChevronRight size={24} />
+          <button className="arrow arrow-right" onClick={scrollRight}>
+            <FaChevronRight size={18} />
           </button>
         )}
       </div>
@@ -205,7 +219,9 @@ const Home = () => {
         </div>
       )}
 
-      <h3 className="text-2xl font-500 my-10  ">{selectedCategory ? `${selectedCategory} Listings` : "Recent Listings"}</h3>
+      <h3 className="text-2xl font-500 my-10">
+        {selectedCategory ? `${selectedCategory} Listings` : "Recent Listings"}
+      </h3>
       <div className="row">
         {ads.map((ad) => (
           <div className="col-sm-6 col-md-4 col-xl-3 mb-3" key={ad.adId}>
