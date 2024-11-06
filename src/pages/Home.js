@@ -45,7 +45,7 @@ const Home = () => {
 
     const adDocs = await getDocs(q);
     let ads = [];
-    adDocs.forEach((doc) => ads.push({ ...doc.data(), id: doc.id }));
+    adDocs.forEach((doc) => ads.push({ ...doc.data()}));
 
     if (sortOption === "low") {
       ads.sort((a, b) => a.price - b.price);
@@ -208,7 +208,7 @@ const Home = () => {
       <h3 className="text-2xl font-500 my-10  ">{selectedCategory ? `${selectedCategory} Listings` : "Recent Listings"}</h3>
       <div className="row">
         {ads.map((ad) => (
-          <div className="col-sm-6 col-md-4 col-xl-3 mb-3" key={ad.id}>
+          <div className="col-sm-6 col-md-4 col-xl-3 mb-3" key={ad.adId}>
             <AdCard ad={ad} />
           </div>
         ))}

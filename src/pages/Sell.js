@@ -102,6 +102,16 @@ const Sell = () => {
         postedBy: auth.currentUser.uid,
       });
 
+      await setDoc(
+        doc(db, "ads", result.id),
+        {
+          adId: result.id,
+        },
+        {
+          merge: true,
+        }
+      );
+
       await setDoc(doc(db, 'favorites', result.id), { users: [] });
 
       setValues({

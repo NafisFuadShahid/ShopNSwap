@@ -61,7 +61,7 @@ const Profile = () => {
     const docs = await getDocs(q);
     const adsList = [];
     docs.forEach((doc) => {
-      adsList.push({ ...doc.data(), id: doc.id });
+      adsList.push({ ...doc.data()});
     });
     setAds(adsList);
   };
@@ -211,7 +211,7 @@ const Profile = () => {
           )}
           <div className="row">
             {ads.map((ad) => (
-              <div key={ad.id} className="col-sm-6 col-md-5 mb-3">
+              <div key={ad.adId} className="col-sm-6 col-md-5 mb-3">
                 <AdCard ad={ad} />
               </div>
             ))}

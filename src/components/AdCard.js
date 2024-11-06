@@ -8,14 +8,14 @@ import { toggleFavorite } from "../utils/fav";
 import Sold from "./Sold";
 
 const AdCard = ({ ad }) => {
-  const { val } = useSnapshot("favorites", ad.id);
-  const adLink = `/${ad.category.toLowerCase()}/${ad.id}`;
+  const { val } = useSnapshot("favorites", ad.adId);
+  const adLink = `/${ad.category.toLowerCase()}/${ad.adId}`;
   const isFavorite = val?.users?.includes(auth.currentUser?.uid);
   const [isAnimating, setIsAnimating] = useState(false);
 
   const handleFavoriteClick = () => {
     setIsAnimating(true);
-    toggleFavorite(val.users, ad.id);
+    toggleFavorite(val.users, ad.adId);
     
     // Reset animation state after the animation completes
     setTimeout(() => {

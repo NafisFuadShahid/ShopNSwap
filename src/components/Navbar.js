@@ -81,27 +81,26 @@ const Navbar = () => {
           {/* User dropdown */}
           {user ? (
             <div className="relative" ref={dropdownRef}>
-<button
-  type="button"
-  className="flex text-sm ml-10 w-12 h-12 rounded-full focus:ring-4 transform transition duration-300 ease-in-out hover:scale-105 hover:ring-2 hover:ring-blue-500"
-  aria-expanded="false"
-  onClick={toggleDropdown}
->
-  {photoUrl ? (
-    <img
-      className="w-12 h-12 rounded-full transition duration-300 ease-in-out hover:scale-105 hover:ring-2 hover:ring-blue-500"
-      src={photoUrl}
-      alt={user.name || "Profile Avatar"}
-    />
-  ) : (
-    <img
-      src="https://i.ibb.co.com/JccxFFM/aa.png"
-      className="w-10 h-10 rounded-full transition duration-300 ease-in-out hover:scale-105 hover:ring-2 hover:ring-blue-500"
-      alt="Logo"
-    />
-  )}
-</button>
-
+              <button
+                type="button"
+                className="flex text-sm ml-10 w-12 h-12 rounded-full focus:ring-4 transform transition duration-300 ease-in-out hover:scale-105 hover:ring-2 hover:ring-blue-500"
+                aria-expanded="false"
+                onClick={toggleDropdown}
+              >
+                {photoUrl ? (
+                  <img
+                    className="w-12 h-12 rounded-full transition duration-300 ease-in-out hover:scale-105 hover:ring-2 hover:ring-blue-500"
+                    src={photoUrl}
+                    alt={user.name || "Profile Avatar"}
+                  />
+                ) : (
+                  <img
+                    src="https://i.ibb.co.com/JccxFFM/aa.png"
+                    className="w-10 h-10 rounded-full transition duration-300 ease-in-out hover:scale-105 hover:ring-2 hover:ring-blue-500"
+                    alt="Logo"
+                  />
+                )}
+              </button>
 
               <div
                 className={`absolute right-0 z-50 mt-2 w-48 bg-white divide-y divide-gray-100 rounded-lg shadow dark:bg-gray-700 dark:divide-gray-600 ${
@@ -130,6 +129,15 @@ const Navbar = () => {
                       onClick={toggleDropdown}
                     >
                       My Favorites
+                    </Link>
+                  </li>
+                  <li>
+                    <Link
+                      to="/chat"
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 dark:text-gray-200 dark:hover:text-white"
+                      onClick={toggleDropdown}
+                    >
+                      Chat
                     </Link>
                   </li>
                   <li>
