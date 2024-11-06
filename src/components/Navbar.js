@@ -8,7 +8,7 @@ import { FaUserAlt, FaSearch } from "react-icons/fa";
 import 'bootstrap/dist/css/bootstrap.min.css';
 
 const Navbar = () => {
-  const { user } = useContext(AuthContext);
+  const { user, unread } = useContext(AuthContext);
   const navigate = useNavigate();
   const [photoUrl, setPhotoUrl] = useState(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -95,7 +95,7 @@ const Navbar = () => {
                   />
                 ) : (
                   <img
-                    src="https://i.ibb.co.com/JccxFFM/aa.png"
+                    src="https://i.ibb.co/com/JccxFFM/aa.png"
                     className="w-10 h-10 rounded-full transition duration-300 ease-in-out hover:scale-105 hover:ring-2 hover:ring-blue-500"
                     alt="Logo"
                   />
@@ -134,10 +134,15 @@ const Navbar = () => {
                   <li>
                     <Link
                       to="/chat"
-                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 dark:text-gray-200 dark:hover:text-white"
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 dark:text-gray-200 dark:hover:text-white position-relative"
                       onClick={toggleDropdown}
                     >
                       Chat
+                      {unread.length ? (
+                        <span className="position-absolute top-10 start-90 translate-middle p-1 bg-danger border border-light rounded-circle">
+                          <span className="visually-hidden">New alerts</span>
+                        </span>
+                      ) : null}
                     </Link>
                   </li>
                   <li>
