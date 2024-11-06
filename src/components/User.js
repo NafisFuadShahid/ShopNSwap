@@ -22,11 +22,23 @@ const User = ({ user, selectUser, chat, online, user1 }) => {
       style={{ cursor: "pointer", position: "relative" }}
     >
       {user.other.photoUrl ? (
-        <img
-          src={user.other.photoUrl}
-          alt={user.name}
-          style={{ width: "50", height: "50px", borderRadius: "50%" }}
-        />
+        <div
+          style={{
+            width: "50px",
+            height: "50px",
+            borderRadius: "50%",
+            overflow: "hidden",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <img
+            src={user.other.photoUrl}
+            alt={user.name}
+            style={{ width: "100%", height: "100%", objectFit: "cover" }}
+          />
+        </div>
       ) : (
         <FaUserCircle size={50} />
       )}
@@ -39,14 +51,14 @@ const User = ({ user, selectUser, chat, online, user1 }) => {
           left: 35,
           borderRadius: "50%",
         }}
-        className={`${online[user.other.uid] ? "bg-success" : "bg-danger"}`}
+        className={`${online[user.other.uid] ? "bg-success" : "bg-secondary"}`}
       ></span>
       <div className="d-none d-md-inline-flex flex-column ms-2">
         <h6>
           {user.other.name}
           <br />
           {user.ad.title}
-        </h6>        
+        </h6>
         <small>
           {val?.lastText?.length > 30
             ? val?.lastText.slice(0, 30)
