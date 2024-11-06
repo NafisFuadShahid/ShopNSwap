@@ -134,17 +134,19 @@ const Navbar = () => {
                   <li>
                     <Link
                       to="/chat"
-                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 dark:text-gray-200 dark:hover:text-white position-relative"
+                      className={`block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 ${
+                        unread.length
+                          ? "bg-red-500 bg-opacity-20 hover:bg-opacity-30"
+                          : "hover:bg-gray-100 dark:hover:bg-gray-600"
+                      }`}
                       onClick={toggleDropdown}
                     >
                       Chat
-                      {unread.length ? (
-                        <span className="position-absolute top-10 start-90 translate-middle p-1 bg-danger border border-light rounded-circle">
-                          <span className="visually-hidden">New alerts</span>
-                        </span>
-                      ) : null}
                     </Link>
                   </li>
+
+
+
                   <li>
                     <button
                       onClick={() => {
