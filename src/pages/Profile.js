@@ -69,7 +69,7 @@ const Profile = () => {
   // Handle image upload and deletion
   const deletePhoto = async () => {
     if (!user.photoPath) return;
-  
+
     const confirm = window.confirm("Delete photo permanently?");
     if (confirm) {
       try {
@@ -126,10 +126,11 @@ const Profile = () => {
                   alt="Preview"
                   className="rounded-circle"
                   style={{
-                    width: "150px",
-                    height: "150px",
+                    width: "180px", // Increased width
+                    height: "180px", // Increased height
+                    aspectRatio: "1 / 1", // Ensures a 1:1 ratio for a perfect circle
                     objectFit: "cover",
-                    border: "2px solid #007bff",
+                    
                   }}
                 />
               ) : user.photoUrl ? (
@@ -138,16 +139,18 @@ const Profile = () => {
                   alt={user.name}
                   className="rounded-circle"
                   style={{
-                    width: "150px",
-                    height: "150px",
+                    width: "180px", // Increased width
+                    height: "180px", // Increased height
+                    aspectRatio: "1 / 1", // Ensures a 1:1 ratio for a perfect circle
                     objectFit: "cover",
-                    border: "2px solid #007bff",
+                    
                   }}
                 />
               ) : (
-                <FaUserAlt size={80} className="text-secondary" />
+                <FaUserAlt size={100} className="text-secondary" /> // Adjust icon size for consistency
               )}
             </div>
+
             <h3 className="fw-bold">{user.name}</h3>
             <p className="text-muted">
               Member since {monthAndYear(user.createdAt.toDate())}
@@ -200,7 +203,6 @@ const Profile = () => {
           </div>
         </div>
         <div className="col-md-8 mt-4 text-start">
-       
           <hr />
           {ads.length ? (
             <h4 className="fw-bold m-10 text-2xl">Products</h4>

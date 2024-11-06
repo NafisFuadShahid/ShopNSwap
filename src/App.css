@@ -197,12 +197,38 @@ body {
 .ad-card .button:hover {
   background-color: #0056b3;
 }
-
-/* Hover effect for profile image */
-.profile-image img:hover {
-  transform: scale(1.05);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+/* Profile image container */
+.profile-image {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 180px; /* Ensure the container allows the image to be 180px wide */
+  height: 180px; /* Ensure the container height matches the image */
+  border-radius: 50%; /* Ensure the container is round */
+  overflow: hidden; /* Hide overflow to maintain the round shape */
+  transition: border 0.3s ease; /* Smooth transition for the border */
 }
+
+/* Profile image styling */
+.profile-image img {
+  width: 100%;  /* Ensures the image takes full width of its container */
+  height: 100%; /* Ensures the image takes full height of its container */
+  object-fit: cover; /* Keeps the aspect ratio and crops as necessary */
+  border-radius: 50%; /* Makes the image circular */
+  transition: transform 0.3s ease, box-shadow 0.3s ease; /* Smooth transition for scaling and shadow */
+}
+
+/* Hover effect for profile image container */
+.profile-image:hover {
+  border: 1.5px solid blue; /* Add a blue border around the container when hovered */
+}
+
+/* Hover effect for profile image itself */
+.profile-image img:hover {
+  transform: scale(1.05); /* Slightly enlarge image on hover */
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); /* Add shadow to the image on hover */
+}
+
 
 /* No Products Message Styling */
 h4 {
