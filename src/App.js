@@ -18,6 +18,7 @@ import Chatbot from "./pages/Chatbot";
 import Swap from "./pages/Swap";
 import Donate from "./pages/Donate";
 import Buy from "./pages/Buy";
+import SearchResults from "./pages/SearchResults";
 
 function App() {
   return (
@@ -33,6 +34,7 @@ function App() {
             <Route path="/swap" element={<Swap />} />
             <Route path="/donate" element={<Donate />} />
             <Route path="/buy" element={<Buy />} />
+            <Route path="/search" element={<SearchResults />} />
           </Route>
           <Route path="/auth/register" element={<Register />} />
           <Route path="/auth/login" element={<Login />} />
