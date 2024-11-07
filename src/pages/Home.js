@@ -5,9 +5,24 @@ import AdCard from "../components/AdCard";
 import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
 
 const categories = [
-  "Vehicles", "Property", "Electronics", "Home", "Fashion", "Jobs", 
-  "Services", "Pets", "Sports", "Hobbies", "Kids", "Business", 
-  "Health", "Education", "Travel", "Events", "Agriculture", "Others"
+  "Vehicles",
+  "Property",
+  "Electronics",
+  "Home",
+  "Fashion",
+  "Jobs",
+  "Services",
+  "Pets",
+  "Sports",
+  "Hobbies",
+  "Kids",
+  "Business",
+  "Health",
+  "Education",
+  "Travel",
+  "Events",
+  "Agriculture",
+  "Others",
 ];
 
 const Home = () => {
@@ -30,7 +45,7 @@ const Home = () => {
 
     const adDocs = await getDocs(q);
     let ads = [];
-    adDocs.forEach((doc) => ads.push({ ...doc.data()}));
+    adDocs.forEach((doc) => ads.push({ ...doc.data() }));
 
     if (sortOption === "low") {
       ads.sort((a, b) => a.price - b.price);
@@ -79,7 +94,7 @@ const Home = () => {
             display: flex;
             align-items: center;
             overflow-x: hidden;
-            gap: 20px;
+            gap: 30px;
             padding-bottom: 10px;
             position: relative;
           }
@@ -87,8 +102,8 @@ const Home = () => {
   display: flex;
   align-items: center;
   background-color: #ffffff;
-  border-radius: 12px;
-  padding: 15px;
+  border-radius: 50px;
+  padding: 30px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   transition: transform 0.3s, background-color 0.3s;
   cursor: pointer;
@@ -171,7 +186,11 @@ const Home = () => {
             <FaChevronLeft size={18} />
           </button>
         )}
-        <div className="category-container" ref={categoryRef} onScroll={updateArrowVisibility}>
+        <div
+          className="category-container"
+          ref={categoryRef}
+          onScroll={updateArrowVisibility}
+        >
           {categories.map((category, index) => (
             <button
               key={index}
@@ -187,7 +206,10 @@ const Home = () => {
                 <div className="category-image-container">
                   <img
                     src={`/images/${category}.jpg`}
-                    onError={(e) => (e.target.src = "https://static.thenounproject.com/png/2932881-200.png")}
+                    onError={(e) =>
+                      (e.target.src =
+                        "https://static.thenounproject.com/png/2932881-200.png")
+                    }
                     alt={category}
                     className="category-image"
                   />
