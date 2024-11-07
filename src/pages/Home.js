@@ -3,12 +3,33 @@ import { collection, query, where, getDocs } from "firebase/firestore";
 import { db } from "../firebaseConfig";
 import AdCard from "../components/AdCard";
 import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
+import { 
+  FaCar, FaHome, FaMobileAlt, FaCouch, FaTshirt, FaBriefcase, 
+  FaTools, FaPaw, FaFootballBall, FaPuzzlePiece, FaBaby, 
+  FaBuilding, FaMedkit, FaGraduationCap, FaPlane, FaCalendarAlt, 
+  FaTractor, FaEllipsisH 
+} from 'react-icons/fa';
 
-const categories = [
-  "Vehicles", "Property", "Electronics", "Home", "Fashion", "Jobs", "Services", "Pets",
-  "Sports", "Hobbies", "Kids", "Business", "Health", "Education", "Travel", "Events",
-  "Agriculture", "Others"
-];
+const categories = {
+  "Vehicles": FaCar,
+  "Property": FaHome,
+  "Electronics": FaMobileAlt,
+  "Home": FaCouch,
+  "Fashion": FaTshirt,
+  "Jobs": FaBriefcase,
+  "Services": FaTools,
+  "Pets": FaPaw,
+  "Sports": FaFootballBall,
+  "Hobbies": FaPuzzlePiece,
+  "Kids": FaBaby,
+  "Business": FaBuilding,
+  "Health": FaMedkit,
+  "Education": FaGraduationCap,
+  "Travel": FaPlane,
+  "Events": FaCalendarAlt,
+  "Agriculture": FaTractor,
+  "Others": FaEllipsisH
+};
 
 const Home = () => {
   const [ads, setAds] = useState({ sell: [], swap: [], donate: [] });
@@ -178,6 +199,12 @@ const Home = () => {
           margin-bottom: 1rem;
           text-transform: capitalize;
         }
+        .category-image-container svg {
+          transition: transform 0.3s ease;
+        }
+        .category-card:hover .category-image-container svg {
+          transform: scale(1.2);
+        }
       `}</style>
 
       <h2 className="text-3xl font-bold mb-6 text-gray-800">Categories</h2>
@@ -193,9 +220,9 @@ const Home = () => {
           ref={categoryRef}
           onScroll={updateArrowVisibility}
         >
-          {categories.map((category, index) => (
+          {Object.entries(categories).map(([category, Icon]) => (
             <button
-              key={index}
+              key={category}
               onClick={() => handleCategoryClick(category)}
               className="focus:outline-none"
             >
@@ -205,12 +232,7 @@ const Home = () => {
                 }`}
               >
                 <div className="category-image-container">
-                  <img
-                    src={`/images/${category.toLowerCase()}.png`}
-                    onError={(e) => (e.target.src = "https://via.placeholder.com/24")}
-                    alt={category}
-                    className="category-image"
-                  />
+                  <Icon className="w-6 h-6" />
                 </div>
                 <span className="category-label">{category}</span>
               </div>

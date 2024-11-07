@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
-import { useParams, useNavigate, Link, useLocation } from "react-router-dom";
+import { useParams, useNavigate, Link } from "react-router-dom";
 import { deleteDoc, doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
 import { auth, db, storage } from "../firebaseConfig";
 import { ref, deleteObject } from "firebase/storage";
-import { AiOutlineHeart, AiFillHeart } from "react-icons/ai";
+import { AiOutlineHeart, AiFillHeart, AiOutlineLeft, AiOutlineRight } from "react-icons/ai";
 import { FaTrashAlt, FaUserCircle, FaPhoneAlt, FaComments } from "react-icons/fa";
 import { FiPhoneCall } from "react-icons/fi";
 import Moment from "react-moment";
@@ -14,7 +14,6 @@ import Sold from "../components/Sold";
 const Ad = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const location = useLocation();
   const [ad, setAd] = useState();
   const [idx, setIdx] = useState(0);
   const [seller, setSeller] = useState();
@@ -83,74 +82,173 @@ const Ad = () => {
   };
 
   return ad ? (
-    <div className="mt-5 container">
-      <div className="text-center mb-4">
-        {ad.isSold && <Sold singleAd={true} />}
-        <div id="carouselExample" className="carousel slide">
-          <div className="carousel-inner">
-            {ad.images.map((image, i) => (
-              <div className={`carousel-item ${idx === i ? "active" : ""}`} key={i}>
-                <img src={image.url} className="d-block w-100" alt={ad.title} style={{ maxHeight: "500px", objectFit: "contain" }} />
-                <button className="carousel-control-prev" type="button" data-bs-target="#carouselExample" data-bs-slide="prev" onClick={() => setIdx(i)}>
-                  <span className="carousel-control-prev-icon" aria-hidden="true"></span>
-                  <span className="visually-hidden">Previous</span>
-                </button>
-                <button className="carousel-control-next" type="button" data-bs-target="#carouselExample" data-bs-slide="next" onClick={() => setIdx(i)}>
-                  <span className="carousel-control-next-icon" aria-hidden="true"></span>
-                  <span className="visually-hidden">Next</span>
-                </button>
-              </div>
-            ))}
-          </div>
+    <div className="container mx-auto px-4 py-8 max-w-6xl">
+      <style jsx>{`
+        .image-gallery {
+          position: relative;
+          overflow: hidden;
+          border-radius: 12px;
+          box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+          background-color: #f8f8f8;
+        }
+        .image-gallery img {
+          width: 100%;
+          height: 500px;
+          object-fit: contain;
+          transition: transform 0.3s ease;
+        }
+        .gallery-nav {
+          position: absolute;
+          top: 50%;
+          transform: translateY(-50%);
+          background-color: rgba(255, 255, 255, 0.8);
+          border-radius: 50%;
+          width: 40px;
+          height: 40px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          transition: all 0.3s ease;
+        }
+        .gallery-nav:hover {
+          background-color: rgba(255, 255, 255, 1);
+          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .gallery-nav-left {
+          left: 16px;
+        }
+        .gallery-nav-right {
+          right: 16px;
+        }
+        .ad-details {
+          background-color: white;
+          border-radius: 12px;
+          box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+          padding: 32px;
+          margin-top: 24px;
+        }
+        .seller-info {
+          background-color: white;
+          border-radius: 12px;
+          box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+          padding: 32px;
+          margin-top: 24px;
+        }
+        .favorite-button {
+          cursor: pointer;
+          transition: transform 0.3s ease;
+        }
+        .favorite-button:hover {
+          transform: scale(1.1);
+        }
+        .animate-heart {
+          animation: heartBeat 0.3s ease-in-out;
+        }
+        @keyframes heartBeat {
+          0% { transform: scale(1); }
+          50% { transform: scale(1.3); }
+          100% { transform: scale(1); }
+        }
+        .action-button {
+          transition: all 0.3s ease;
+          width: 100%;
+        }
+        .action-button:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+      `}</style>
+
+      <div className="image-gallery mb-6">
+        <img src={ad.images[idx].url} alt={ad.title} />
+        <div className="gallery-nav gallery-nav-left" onClick={() => setIdx((prev) => (prev === 0 ? ad.images.length - 1 : prev - 1))}>
+          <AiOutlineLeft size={24} />
+        </div>
+        <div className="gallery-nav gallery-nav-right" onClick={() => setIdx((prev) => (prev === ad.images.length - 1 ? 0 : prev + 1))}>
+          <AiOutlineRight size={24} />
         </div>
       </div>
 
-      <div className="row d-flex align-items-stretch">
-        {/* Product Details */}
-        <div className="col-md-6 d-flex">
-          <div className="card mb-4 h-100 w-100 shadow-sm rounded">
-            <div className="card-body">
-              <div className="d-flex justify-content-between align-items-center mb-3">
-                <h5 className="card-title text-primary mb-0">
-                  BDT. {Number(ad.price).toLocaleString()}
-                </h5>
-                <div onClick={handleFavoriteClick} className={`cursor-pointer transition-transform duration-300 ${isAnimating ? 'animate-heart' : ''}`} style={{ transition: "color 0.3s ease" }}>
-                  {isFavorite ? <AiFillHeart size={27} className="text-pink-500" /> : <AiOutlineHeart size={27} className="text-gray-300" />}
-                </div>
-              </div>
-              <h6 className="card-subtitle text-muted mb-2">{ad.title}</h6>
-              <p className="card-text mb-2">{ad.description}</p>
-              {ad.condition && <p className="card-text">Condition: <strong>{ad.condition}</strong></p>}
-              <p className="card-text">{ad.location} - <small><Moment fromNow>{ad.publishedAt.toDate()}</Moment></small></p>
-              {ad.postedBy === auth.currentUser?.uid && (
-                <FaTrashAlt className="text-danger cursor-pointer hover:scale-110" size={22} onClick={deleteAd} style={{ transition: "transform 0.2s ease" }} />
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Seller Information */}
-        <div className="col-md-6 d-flex">
-          <div className="card mb-4 h-100 w-100 shadow-sm rounded">
-            <div className="card-body">
-              <h5 className="card-title text-primary">Seller Description</h5>
-              <Link to={`/profile/${ad.postedBy}`}>
-                <div className="d-flex align-items-center mb-3">
-                  {seller?.photoUrl ? <img src={seller.photoUrl} alt={seller.name} className="rounded-circle me-3" style={{ width: "50px", height: "50px" }} /> : <FaUserCircle size={40} className="me-3" />}
-                  <h6 className="mb-0">{seller?.name}</h6>
-                </div>
-              </Link>
-              <div className="text-center">
-                {auth.currentUser ? (
-                  <>
-                    {showNumber ? <p className="text-muted"><FiPhoneCall size={20} /> {ad.contact}</p> : <button className="btn btn-primary m-2" onClick={() => setShowNumber(true)}><FaPhoneAlt size={20} className="mb-1" /> Show Contact Info</button>}
-                    {ad.postedBy !== auth.currentUser?.uid && <button className="btn btn-success m-2" onClick={createChatroom}><FaComments size={20} className="mb-1" /> Chat with Seller</button>}
-                  </>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="md:col-span-2">
+          <div className="ad-details h-full">
+            <div className="flex justify-between items-center mb-4">
+              <h1 className="text-3xl font-bold text-gray-800">{ad.title}</h1>
+              <div 
+                className={`favorite-button ${isAnimating ? 'animate-heart' : ''}`}
+                onClick={handleFavoriteClick}
+              >
+                {isFavorite ? (
+                  <AiFillHeart size={32} className="text-red-500" />
                 ) : (
-                  <p className="text-center">Please <Link to="/login">login</Link> to view contact info.</p>
+                  <AiOutlineHeart size={32} className="text-gray-400" />
                 )}
               </div>
             </div>
+            <p className="text-2xl font-semibold text-green-600 mb-4">
+              BDT. {Number(ad.price).toLocaleString()}
+            </p>
+            <p className="text-gray-600 mb-4">{ad.description}</p>
+            <div className="flex justify-between items-center text-sm text-gray-500">
+              <p>Condition: <span className="font-semibold">{ad.condition}</span></p>
+              <p>{ad.location} - <Moment fromNow>{ad.publishedAt.toDate()}</Moment></p>
+            </div>
+            {ad.isSold && (
+              <div className="mt-4">
+                <Sold singleAd={true} />
+              </div>
+            )}
+            {ad.postedBy === auth.currentUser?.uid && (
+              <button
+                className="mt-4 flex items-center text-red-500 hover:text-red-700 transition-colors duration-300"
+                onClick={deleteAd}
+              >
+                <FaTrashAlt className="mr-2" /> Delete Ad
+              </button>
+            )}
+          </div>
+        </div>
+
+        <div className="md:col-span-1">
+          <div className="seller-info h-full">
+            <h2 className="text-2xl font-semibold mb-4">Seller Information</h2>
+            <Link to={`/profile/${ad.postedBy}`} className="flex items-center mb-4 hover:bg-gray-100 p-2 rounded transition-colors duration-300">
+              {seller?.photoUrl ? (
+                <img src={seller.photoUrl} alt={seller.name} className="w-12 h-12 rounded-full mr-4" />
+              ) : (
+                <FaUserCircle size={48} className="mr-4 text-gray-400" />
+              )}
+              <span className="text-lg font-medium text-gray-800">{seller?.name}</span>
+            </Link>
+            {auth.currentUser ? (
+              <div className="space-y-3">
+                {showNumber ? (
+                  <p className="flex items-center text-gray-600 bg-gray-100 p-3 rounded">
+                    <FiPhoneCall size={20} className="mr-2" /> {ad.contact}
+                  </p>
+                ) : (
+                  <button
+                    className="action-button bg-blue-500 hover:bg-blue-600 text-white py-3 px-4 rounded-lg flex items-center justify-center"
+                    onClick={() => setShowNumber(true)}
+                  >
+                    <FaPhoneAlt size={16} className="mr-2" /> Show Contact Info
+                  </button>
+                )}
+                {ad.postedBy !== auth.currentUser?.uid && (
+                  <button
+                    className="action-button bg-green-500 hover:bg-green-600 text-white py-3 px-4 rounded-lg flex items-center justify-center"
+                    onClick={createChatroom}
+                  >
+                    <FaComments size={16} className="mr-2" /> Chat with Seller
+                  </button>
+                )}
+              </div>
+            ) : (
+              <p className="text-center text-gray-600 bg-gray-100 p-4 rounded">
+                Please <Link to="/login" className="text-blue-500 hover:underline">login</Link> to view contact info.
+              </p>
+            )}
           </div>
         </div>
       </div>
