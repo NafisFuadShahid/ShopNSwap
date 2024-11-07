@@ -5,28 +5,13 @@ import AdCard from "../components/AdCard";
 import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
 
 const categories = [
-  "Vehicles",
-  "Property",
-  "Electronics",
-  "Home",
-  "Fashion",
-  "Jobs",
-  "Services",
-  "Pets",
-  "Sports",
-  "Hobbies",
-  "Kids",
-  "Business",
-  "Health",
-  "Education",
-  "Travel",
-  "Events",
-  "Agriculture",
-  "Others",
+  "Vehicles", "Property", "Electronics", "Home", "Fashion", "Jobs", "Services", "Pets",
+  "Sports", "Hobbies", "Kids", "Business", "Health", "Education", "Travel", "Events",
+  "Agriculture", "Others"
 ];
 
 const Home = () => {
-  const [ads, setAds] = useState([]);
+  const [ads, setAds] = useState({ sell: [], swap: [], donate: [] });
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [sortOption, setSortOption] = useState("latest");
   const [showLeftArrow, setShowLeftArrow] = useState(false);
@@ -35,27 +20,29 @@ const Home = () => {
 
   const getAds = async (category = null, sortOption = "latest") => {
     const adsRef = collection(db, "ads");
-    let q;
-
-    if (category) {
-      q = query(adsRef, where("category", "==", category));
-    } else {
-      q = query(adsRef);
-    }
+    let q = category ? query(adsRef, where("category", "==", category)) : query(adsRef);
 
     const adDocs = await getDocs(q);
-    let ads = [];
-    adDocs.forEach((doc) => ads.push({ ...doc.data() }));
+    let fetchedAds = { sell: [], swap: [], donate: [] };
+    adDocs.forEach((doc) => {
+      const ad = doc.data();
+      if (fetchedAds[ad.adType]) {
+        fetchedAds[ad.adType].push(ad);
+      }
+    });
 
-    if (sortOption === "low") {
-      ads.sort((a, b) => a.price - b.price);
-    } else if (sortOption === "high") {
-      ads.sort((a, b) => b.price - a.price);
-    } else if (sortOption === "latest") {
-      ads.sort((a, b) => b.publishedAt - a.publishedAt);
-    }
+    // Sort ads for each type
+    Object.keys(fetchedAds).forEach(type => {
+      if (sortOption === "low") {
+        fetchedAds[type].sort((a, b) => a.price - b.price);
+      } else if (sortOption === "high") {
+        fetchedAds[type].sort((a, b) => b.price - a.price);
+      } else if (sortOption === "latest") {
+        fetchedAds[type].sort((a, b) => b.publishedAt - a.publishedAt);
+      }
+    });
 
-    setAds(ads);
+    setAds(fetchedAds);
   };
 
   useEffect(() => {
@@ -83,104 +70,119 @@ const Home = () => {
   };
 
   return (
-    <div className="mt-5 container">
-      <style>
-        {`
-          body {
-            background-color: #fdfdfd;
-            color: #333;
-          }
-          .category-container {
-            display: flex;
-            align-items: center;
-            overflow-x: hidden;
-            gap: 30px;
-            padding-bottom: 10px;
-            position: relative;
-          }
-.category-card {
-  display: flex;
-  align-items: center;
-  background-color: #ffffff;
-  border-radius: 50px;
-  padding: 30px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  transition: transform 0.3s, background-color 0.3s;
-  cursor: pointer;
-}
+    <div className="container mx-auto px-4 py-8">
+      <style jsx>{`
+        .category-container {
+          display: flex;
+          align-items: center;
+          overflow-x: hidden;
+          gap: 20px;
+          padding-bottom: 20px;
+          position: relative;
+        }
+        .category-card {
+          display: flex;
+          align-items: center;
+          background-color: #ffffff;
+          border-radius: 50px;
+          padding: 15px 25px;
+          box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+          transition: all 0.3s ease;
+          cursor: pointer;
+        }
+        .category-card:hover {
+          background-color: #f0f9ff;
+          transform: translateY(-3px);
+          box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        }
+        .category-image-container {
+          width: 40px;
+          height: 40px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 50%;
+          background-color: #f3f4f6;
+          margin-right: 12px;
+          flex-shrink: 0;
+        }
+        .category-image {
+          width: 24px;
+          height: 24px;
+          object-fit: contain;
+        }
+        .category-label {
+          font-size: 14px;
+          font-weight: 600;
+          color: #374151;
+        }
+        .selected-category {
+          background-color: #3b82f6;
+          color: white;
+        }
+        .selected-category .category-label {
+          color: white;
+        }
+        .arrow {
+          position: absolute;
+          top: 50%;
+          transform: translateY(-50%);
+          background-color: #ffffff;
+          color: #3b82f6;
+          border: none;
+          border-radius: 50%;
+          width: 40px;
+          height: 40px;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+          transition: all 0.3s ease;
+        }
+        .arrow:hover {
+          background-color: #3b82f6;
+          color: white;
+        }
+        .arrow-left {
+          left: -20px;
+        }
+        .arrow-right {
+          right: -20px;
+        }
+        .dropdown-custom {
+          appearance: none;
+          background-color: #ffffff;
+          border: 1px solid #e5e7eb;
+          border-radius: 0.375rem;
+          padding: 0.5rem 2.5rem 0.5rem 0.75rem;
+          font-size: 0.875rem;
+          line-height: 1.25rem;
+          color: #374151;
+          background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+          background-position: right 0.5rem center;
+          background-repeat: no-repeat;
+          background-size: 1.5em 1.5em;
+        }
+        .ad-type-section {
+          margin-bottom: 2rem;
+          padding: 1.5rem;
+          background-color: #f9fafb;
+          border-radius: 0.5rem;
+          box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+        }
+        .ad-type-title {
+          font-size: 1.5rem;
+          font-weight: 600;
+          color: #374151;
+          margin-bottom: 1rem;
+          text-transform: capitalize;
+        }
+      `}</style>
 
-.category-card:hover {
-  background-color: #e6f4ff; /* Lighter blue color on hover */
-  transform: translateY(-5px);
-}
+      <h2 className="text-3xl font-bold mb-6 text-gray-800">Categories</h2>
 
-.category-image-container {
-  width: 50px;
-  height: 50px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  background-color: #eee;
-  margin-right: 15px;
-  flex-shrink: 0;
-}
-
-.category-image {
-  width: 100%;
-  height: 100%;
-  border-radius: 50%;
-  object-fit: cover;
-}
-
-.category-label {
-  font-size: 16px;
-  font-weight: bold;
-  color: #333;
-}
-
-.selected-category {
-  border: 3px solid #007bff !important;
-}
-
-          .arrow {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  background-color: #ffffff; /* Default color */
-  color: #007bff; /* Default icon color */
-  border: none;
-  border-radius: 50%;
-  width: 35px;
-  height: 35px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  opacity: 0.7;
-  transition: background-color 0.3s, opacity 0.3s;
-}
-
-.arrow:hover {
-  background-color: #007bff; /* Change to blue on hover */
-  color: white; /* Change icon color to white */
-  opacity: 1; /* Full opacity on hover */
-}
-
-.arrow-left {
-  left: -15px;
-}
-
-.arrow-right {
-  right: -15px;
-}
-
-        `}
-      </style>
-
-      <h3 className="text-2xl font-500 my-10">Categories</h3>
-
-      <div className="position-relative d-flex align-items-center">
+      <div className="relative">
         {showLeftArrow && (
           <button className="arrow arrow-left" onClick={scrollLeft}>
             <FaChevronLeft size={18} />
@@ -195,8 +197,7 @@ const Home = () => {
             <button
               key={index}
               onClick={() => handleCategoryClick(category)}
-              className="text-decoration-none"
-              style={{ border: "none", background: "none", padding: "0" }}
+              className="focus:outline-none"
             >
               <div
                 className={`category-card ${
@@ -205,11 +206,8 @@ const Home = () => {
               >
                 <div className="category-image-container">
                   <img
-                    src={`/images/${category}.jpg`}
-                    onError={(e) =>
-                      (e.target.src =
-                        "https://static.thenounproject.com/png/2932881-200.png")
-                    }
+                    src={`/images/${category.toLowerCase()}.png`}
+                    onError={(e) => (e.target.src = "https://via.placeholder.com/24")}
                     alt={category}
                     className="category-image"
                   />
@@ -226,10 +224,16 @@ const Home = () => {
         )}
       </div>
 
-      {selectedCategory && (
-        <div className="mb-4">
-          <h5>Sort By:</h5>
+      <div className="mt-8 mb-6 flex justify-between items-center">
+        <h2 className="text-3xl font-bold text-gray-800">
+          {selectedCategory ? `${selectedCategory} Listings` : "Recent Listings"}
+        </h2>
+        <div>
+          <label htmlFor="sort-select" className="block text-sm font-medium text-gray-700 mb-2">
+            Sort By:
+          </label>
           <select
+            id="sort-select"
             className="dropdown-custom"
             onChange={(e) => setSortOption(e.target.value)}
             value={sortOption}
@@ -239,18 +243,20 @@ const Home = () => {
             <option value="high">Price: High to Low</option>
           </select>
         </div>
-      )}
-
-      <h3 className="text-2xl font-500 my-10">
-        {selectedCategory ? `${selectedCategory} Listings` : "Recent Listings"}
-      </h3>
-      <div className="row">
-        {ads.map((ad) => (
-          <div className="col-sm-6 col-md-4 col-xl-3 mb-3" key={ad.adId}>
-            <AdCard ad={ad} />
-          </div>
-        ))}
       </div>
+
+      {Object.entries(ads).map(([adType, adList]) => (
+        <div key={adType} className="ad-type-section">
+          <h3 className="ad-type-title">{adType}</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            {adList.map((ad) => (
+              <div key={ad.adId}>
+                <AdCard ad={ad} />
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
     </div>
   );
 };
