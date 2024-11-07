@@ -6,6 +6,7 @@ import { AuthContext } from "../context/auth";
 import { auth, db } from "../firebaseConfig";
 import { FaUserAlt, FaSearch, FaHeart, FaComments, FaSignOutAlt, FaShoppingCart } from "react-icons/fa";
 import { MdPostAdd } from "react-icons/md";
+import 'bootstrap/dist/css/bootstrap.min.css';
 
 const Navbar = () => {
   const { user, unread } = useContext(AuthContext);
@@ -158,7 +159,7 @@ const Navbar = () => {
                     >
                       <div className="font-medium">{result.title}</div>
                       <div className="text-sm text-gray-500 dark:text-gray-300">{result.category}</div>
-                      <div className="text-sm text-gray-500 dark:text-gray-300">${result.price}</div>
+                      <div className="text-sm text-gray-500 dark:text-gray-300">BDT{result.price}</div>
                     </div>
                   ))}
                 </div>
