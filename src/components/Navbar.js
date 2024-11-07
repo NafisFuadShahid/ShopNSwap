@@ -61,6 +61,7 @@ const Navbar = () => {
     e.preventDefault();
     if (searchQuery.trim()) {
       navigate(`/search?q=${encodeURIComponent(searchQuery)}`);
+      setSearchResults([]); // Clear search results after navigating
     }
   };
 
@@ -130,6 +131,7 @@ const Navbar = () => {
                       onClick={() => {
                         setSearchQuery(result);
                         setSearchResults([]);
+                        navigate(`/search?q=${encodeURIComponent(result)}`);
                       }}
                     >
                       {result}

@@ -14,7 +14,7 @@ import {
   where,
 } from "firebase/firestore";
 import { db, auth } from "../firebaseConfig";
-import { FaSearch, FaPaperPlane, FaUserCircle, FaEye } from 'react-icons/fa';
+import { FaSearch, FaPaperPlane, FaUserCircle } from 'react-icons/fa';
 import MessageForm from "../components/MessageForm";
 import User from "../components/User";
 import Message from "../components/Message";
@@ -138,7 +138,7 @@ const Chat = () => {
   );
 
   return (
-    <div className="flex h-screen bg-gray-100 overflow-hidden">
+    <div className="flex h-screen bg-gray-100">
       {/* Users Section */}
       <div className="w-1/4 bg-white border-r border-gray-300 flex flex-col">
         <div className="p-4 border-b border-gray-300">
@@ -174,18 +174,12 @@ const Chat = () => {
             <div className="bg-white p-4 border-b border-gray-300 flex justify-between items-center">
               <div>
                 <h2 className="text-xl font-semibold">{chat.other.name}</h2>
-                <Link
-                  to={`/${chat.ad.category.toLowerCase()}/${chat.ad.adId}`}
-                  className="text-blue-600 hover:underline"
-                >
-                  {chat.ad.title}
-                </Link>
+                <p className="text-gray-600">{chat.ad.title}</p>
               </div>
               <Link
                 to={`/${chat.ad.category.toLowerCase()}/${chat.ad.adId}`}
-                className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 flex items-center"
+                className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition duration-200"
               >
-                <FaEye className="mr-2" />
                 View Ad
               </Link>
             </div>
@@ -214,19 +208,25 @@ const Chat = () => {
         {chat && (
           <div className="p-4">
             <div className="flex flex-col items-center mb-4">
-              {chat.other.avatar ? (
-                <img src={chat.other.avatar} alt={chat.other.name} className="w-24 h-24 rounded-full mb-2" />
+              {chat.ad.images && chat.ad.images.length > 0 ? (
+                <img 
+                  src={chat.ad.images[0].url} 
+                  alt={chat.ad.title}
+                  className="w-full h-48 object-cover mb-2 rounded" 
+                />
               ) : (
-                <FaUserCircle className="w-24 h-24 text-gray-400 mb-2" />
+                <div className="w-full h-48 bg-gray-200 flex items-center justify-center mb-2 rounded">
+                  <FaUserCircle className="w-24 h-24 text-gray-400" />
+                </div>
               )}
-              <h3 className="text-xl font-semibold">{chat.other.name}</h3>
-              <p className="text-gray-600">Product Owner</p>
+              <h3 className="text-xl font-semibold">{chat.ad.title}</h3>
+              <p className="text-gray-600">{chat.other.name}</p>
             </div>
             <div className="border-t border-gray-200 pt-4">
               <h4 className="font-semibold mb-2">Product Details</h4>
-              <p><strong>Name:</strong> {chat.ad.title}</p>
               <p><strong>Price:</strong> ${chat.ad.price}</p>
               <p><strong>Category:</strong> {chat.ad.category}</p>
+              <p><strong>Description:</strong> {chat.ad.description}</p>
             </div>
           </div>
         )}
