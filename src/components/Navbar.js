@@ -33,6 +33,8 @@ const Navbar = () => {
     }
   }, [user]);
 
+  
+
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
