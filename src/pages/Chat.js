@@ -1,3 +1,5 @@
+import React, { useEffect, useState } from "react";
+import { useLocation, Link } from "react-router-dom";
 import {
   addDoc,
   collection,
@@ -11,9 +13,8 @@ import {
   updateDoc,
   where,
 } from "firebase/firestore";
-import React, { useEffect, useState } from "react";
 import { db, auth } from "../firebaseConfig";
-import { useLocation, Link } from "react-router-dom";
+import { FaSearch, FaPaperPlane, FaUserCircle, FaEye } from 'react-icons/fa';
 import MessageForm from "../components/MessageForm";
 import User from "../components/User";
 import Message from "../components/Message";
@@ -24,19 +25,17 @@ const Chat = () => {
   const [users, setUsers] = useState([]);
   const [msgs, setMsgs] = useState([]);
   const [online, setOnline] = useState({});
+  const [searchTerm, setSearchTerm] = useState("");
 
   const location = useLocation();
-
   const user1 = auth.currentUser.uid;
 
   const selectUser = async (user) => {
     setChat(user);
-
     const user2 = user.other.uid;
-    const id =
-      user1 > user2
-        ? `${user1}.${user2}.${user.ad.adId}`
-        : `${user2}.${user1}.${user.ad.adId}`;
+    const id = user1 > user2
+      ? `${user1}.${user2}.${user.ad.adId}`
+      : `${user2}.${user1}.${user.ad.adId}`;
 
     const msgsRef = collection(db, "messages", id, "chat");
     const q = query(msgsRef, orderBy("createdAt", "asc"));
@@ -76,16 +75,8 @@ const Chat = () => {
     const unsubscribes = [];
     for (const message of messages) {
       const adRef = doc(db, "ads", message.ad);
-      const meRef = doc(
-        db,
-        "users",
-        message.users.find((id) => id === user1)
-      );
-      const otherRef = doc(
-        db,
-        "users",
-        message.users.find((id) => id !== user1)
-      );
+      const meRef = doc(db, "users", message.users.find((id) => id === user1));
+      const otherRef = doc(db, "users", message.users.find((id) => id !== user1));
 
       const adDoc = await getDoc(adRef);
       const meDoc = await getDoc(meRef);
@@ -123,10 +114,9 @@ const Chat = () => {
     e.preventDefault();
 
     const user2 = chat.other.uid;
-    const chatId =
-      user1 > user2
-        ? `${user1}.${user2}.${chat.ad.adId}`
-        : `${user2}.${user1}.${chat.ad.adId}`;
+    const chatId = user1 > user2
+      ? `${user1}.${user2}.${chat.ad.adId}`
+      : `${user2}.${user1}.${chat.ad.adId}`;
 
     await addDoc(collection(db, "messages", chatId, "chat"), {
       text,
@@ -142,130 +132,105 @@ const Chat = () => {
     setText("");
   };
 
+  const filteredUsers = users.filter(user => 
+    user.ad.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    user.other.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   return (
-    <div className="chat-container">
-      <div className="users-container">
-        {users.map((user, i) => (
-          <User
-            key={i}
-            user={user}
-            selectUser={selectUser}
-            chat={chat}
-            online={online}
-            user1={user1}
-          />
-        ))}
+    <div className="flex h-screen bg-gray-100 overflow-hidden">
+      {/* Users Section */}
+      <div className="w-1/4 bg-white border-r border-gray-300 flex flex-col">
+        <div className="p-4 border-b border-gray-300">
+          <div className="relative">
+            <input
+              type="text"
+              placeholder="Search chats..."
+              className="w-full pl-10 pr-4 py-2 rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+            <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+          </div>
+        </div>
+        <div className="flex-1 overflow-y-auto">
+          {filteredUsers.map((user, i) => (
+            <User
+              key={i}
+              user={user}
+              selectUser={selectUser}
+              chat={chat}
+              online={online}
+              user1={user1}
+            />
+          ))}
+        </div>
       </div>
-      <div className="chat-area">
+
+      {/* Conversation Section */}
+      <div className="flex-1 flex flex-col">
         {chat ? (
           <>
-            <div className="chat-header">
-              <h3>{chat.other.name}</h3>
+            <div className="bg-white p-4 border-b border-gray-300 flex justify-between items-center">
+              <div>
+                <h2 className="text-xl font-semibold">{chat.other.name}</h2>
+                <Link
+                  to={`/${chat.ad.category.toLowerCase()}/${chat.ad.adId}`}
+                  className="text-blue-600 hover:underline"
+                >
+                  {chat.ad.title}
+                </Link>
+              </div>
               <Link
-                className="product-name-link"
                 to={`/${chat.ad.category.toLowerCase()}/${chat.ad.adId}`}
+                className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 flex items-center"
               >
-                {chat.ad.title}
+                <FaEye className="mr-2" />
+                View Ad
               </Link>
             </div>
-            <div className="chat-ad-details">
-              <img
-                src={chat.ad.images[0].url}
-                alt={chat.ad.title}
-                className="ad-image"
-              />
-              <div className="ad-info">
-                <h6>{chat.ad.title}</h6>
-                <small>{chat.ad.price}</small>
-              </div>
-            </div>
-            <div className="messages-container">
+            <div className="flex-1 overflow-y-auto p-4 space-y-4">
               {msgs.map((msg, i) => (
                 <Message key={i} msg={msg} user1={user1} />
               ))}
             </div>
-            <MessageForm
-              text={text}
-              setText={setText}
-              handleSubmit={handleSubmit}
-            />
+            <div className="sticky bottom-0 bg-white p-4 border-t border-gray-300">
+              <MessageForm
+                text={text}
+                setText={setText}
+                handleSubmit={handleSubmit}
+              />
+            </div>
           </>
         ) : (
-          <div className="no-chat-selected">
-            <h3>Select a user to start conversation</h3>
+          <div className="flex-1 flex items-center justify-center">
+            <p className="text-gray-500 text-xl">Select a chat to start messaging</p>
           </div>
         )}
       </div>
 
-      {/* Inline CSS Styles */}
-      <style jsx="true">{`
-        .chat-container {
-          display: flex;
-          height: 100vh;
-          background-color: #ffffff;
-        }
-        .users-container {
-          width: 25%;
-          background: rgba(138, 43, 226, 0.1); /* Transparent light purple */
-          overflow-y: auto;
-          padding: 20px;
-          border-right: 1px solid #ddd;
-        }
-        .chat-area {
-          width: 75%;
-          display: flex;
-          flex-direction: column;
-          position: relative;
-        }
-        .chat-header {
-          text-align: center;
-          padding: 10px;
-          border-bottom: 1px solid #ddd;
-          background: rgba(138, 43, 226, 0.1); /* Transparent light purple */
-        }
-        .product-name-link {
-          display: block;
-          margin-top: 5px;
-          font-weight: bold;
-          color: #4f46e5;
-          text-decoration: none;
-        }
-        .product-name-link:hover {
-          text-decoration: underline;
-        }
-        .chat-ad-details {
-          display: flex;
-          align-items: center;
-          padding: 10px;
-          border-bottom: 1px solid #ddd;
-        }
-        .ad-image {
-          width: 50px;
-          height: 50px;
-          border-radius: 5px;
-        }
-        .ad-info {
-          flex-grow: 1;
-          margin-left: 10px;
-        }
-        .messages-container {
-          flex-grow: 1;
-          overflow-y: auto;
-          padding: 20px;
-          max-height: calc(100vh - 170px); /* Limits the message container height */
-        }
-        .no-chat-selected {
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          height: 100%;
-          color: #6b7280;
-        }
-        .message-form {
-          padding: 10px;
-          background: #f3f4f6;
-        }
-      `}</style>
+      {/* User Profile Section */}
+      <div className="w-1/4 bg-white border-l border-gray-300 overflow-y-auto">
+        {chat && (
+          <div className="p-4">
+            <div className="flex flex-col items-center mb-4">
+              {chat.other.avatar ? (
+                <img src={chat.other.avatar} alt={chat.other.name} className="w-24 h-24 rounded-full mb-2" />
+              ) : (
+                <FaUserCircle className="w-24 h-24 text-gray-400 mb-2" />
+              )}
+              <h3 className="text-xl font-semibold">{chat.other.name}</h3>
+              <p className="text-gray-600">Product Owner</p>
+            </div>
+            <div className="border-t border-gray-200 pt-4">
+              <h4 className="font-semibold mb-2">Product Details</h4>
+              <p><strong>Name:</strong> {chat.ad.title}</p>
+              <p><strong>Price:</strong> ${chat.ad.price}</p>
+              <p><strong>Category:</strong> {chat.ad.category}</p>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
