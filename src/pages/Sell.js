@@ -101,6 +101,7 @@ const Sell = () => {
         isNew,
         isSold: false,
         listingType,
+        adType: listingType,
         publishedAt: Timestamp.fromDate(new Date()),
         postedBy: auth.currentUser.uid,
       });
@@ -127,7 +128,7 @@ const Sell = () => {
         contact: "",
         description: "",
         isNew: true,
-        listingType: "sell",
+        listingType: "",
         loading: false,
       });
       setImagePreviews([]);

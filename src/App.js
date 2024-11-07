@@ -15,6 +15,7 @@ import Ad from "./pages/Ad";
 import Footer from "./components/Footer"; // Import the Footer component
 import Chat from "./pages/Chat";
 import Chatbot from "./pages/Chatbot";
+import Swap from "./pages/Swap";
 
 function App() {
   return (
@@ -27,6 +28,7 @@ function App() {
             <Route path="/favorites" element={<MyFavorites />} />
             <Route path="/chat" element={<Chat />} />
             <Route path="/chatbot" element={<Chatbot />} />
+            <Route path="/swap" element={<Swap />} />
           </Route>
           <Route path="/auth/register" element={<Register />} />
           <Route path="/auth/login" element={<Login />} />
