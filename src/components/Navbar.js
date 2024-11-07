@@ -4,15 +4,20 @@ import React, { useContext, useEffect, useState, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { AuthContext } from "../context/auth";
 import { auth, db } from "../firebaseConfig";
-import { FaUserAlt, FaSearch } from "react-icons/fa";
+import { FaUserAlt, FaSearch, FaHeart, FaComments, FaSignOutAlt, FaShoppingCart } from "react-icons/fa";
+import { MdPostAdd } from "react-icons/md";
 import 'bootstrap/dist/css/bootstrap.min.css';
 
 const Navbar = () => {
   const { user, unread } = useContext(AuthContext);
   const navigate = useNavigate();
   const [photoUrl, setPhotoUrl] = useState(null);
+  const [userName, setUserName] = useState("");
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const dropdownRef = useRef(null); // Ref for dropdown
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState([]);
+  const dropdownRef = useRef(null);
+  const searchRef = useRef(null);
 
   useEffect(() => {
     if (user) {
@@ -21,6 +26,7 @@ const Navbar = () => {
         if (docSnapshot.exists()) {
           const userData = docSnapshot.data();
           setPhotoUrl(userData.photoUrl || null);
+          setUserName(userData.name || user.displayName || "User");
         }
       });
       return () => unsubscribe();
@@ -28,10 +34,12 @@ const Navbar = () => {
   }, [user]);
 
   useEffect(() => {
-    // Close dropdown if click is outside
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setDropdownOpen(false);
+      }
+      if (searchRef.current && !searchRef.current.contains(event.target)) {
+        setSearchResults([]);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
@@ -49,154 +57,198 @@ const Navbar = () => {
     }
   };
 
+  const handleSearch = (e) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      navigate(`/search?q=${encodeURIComponent(searchQuery)}`);
+    }
+  };
+
+  const handleSearchChange = (e) => {
+    const query = e.target.value;
+    setSearchQuery(query);
+    // Simulated search results - replace with actual API call or database query
+    const simulatedResults = [
+      "iPhone 12",
+      "Samsung Galaxy S21",
+      "MacBook Pro",
+      "Sony PlayStation 5",
+      "Nintendo Switch",
+    ].filter(item => item.toLowerCase().includes(query.toLowerCase()));
+    setSearchResults(simulatedResults);
+  };
+
   const toggleDropdown = () => {
     setDropdownOpen(!dropdownOpen);
   };
 
   return (
-    <nav className="bg-white border-gray-200 dark:bg-gray-900">
-      <div className="flex flex-wrap items-center justify-between p-4 mx-14">
-        <Link to="/" className="flex items-center space-x-3 rtl:space-x-reverse">
-          <img
-            src="https://svgshare.com/i/1BQj.svg"
-            className="h-8"
-            alt="Logo"
-          />
-          <span className="self-center text-2xl font-semibold whitespace-nowrap dark:text-white">
-            ShopNSwap
-          </span>
-        </Link>
-
-        <div className="flex items-center md:order-2 space-x-3 md:space-x-0 rtl:space-x-reverse">
-          {/* Search bar */}
-          <div className="hidden md:flex">
-            <input
-              type="text"
-              className="form-control rounded-full"
-              placeholder="Search..."
-              style={{ width: "300px" }}
-            />
+    <nav className="bg-white shadow-md dark:bg-gray-800 transition-all duration-300">
+      <div className="max-w-[95%] mx-auto px-4">
+        <div className="flex justify-between items-center h-20">
+          <div className="flex items-center space-x-8">
+            <Link to="/" className="flex-shrink-0 flex items-center">
+              <img
+                src="https://svgshare.com/i/1BQj.svg"
+                className="h-10 w-auto"
+                alt="Logo"
+              />
+              <span className="ml-2 text-2xl font-semibold text-gray-800 dark:text-white">
+                ShopNSwap
+              </span>
+            </Link>
+            <div className="hidden md:flex items-center space-x-1">
+              <NavLink to="/buy">Buy</NavLink>
+              <NavLink to="/swap">Swap</NavLink>
+              <NavLink to="/donate">Donate</NavLink>
+            </div>
           </div>
 
-          {/* User dropdown */}
-          {user ? (
-            <div className="relative" ref={dropdownRef}>
-              <button
-                type="button"
-                className="flex text-sm ml-10 w-12 h-12 rounded-full focus:ring-4 transform transition duration-300 ease-in-out hover:scale-105 hover:ring-2 hover:ring-blue-500"
-                aria-expanded="false"
-                onClick={toggleDropdown}
-              >
-                {photoUrl ? (
-                  <img
-                    className="w-12 h-12 rounded-full transition duration-300 ease-in-out hover:scale-105 hover:ring-2 hover:ring-blue-500"
-                    src={photoUrl}
-                    alt={user.name || "Profile Avatar"}
-                  />
-                ) : (
-                  <img
-                    src="https://i.ibb.co/com/JccxFFM/aa.png"
-                    className="w-10 h-10 rounded-full transition duration-300 ease-in-out hover:scale-105 hover:ring-2 hover:ring-blue-500"
-                    alt="Logo"
-                  />
-                )}
-              </button>
-
-              <div
-                className={`absolute right-0 z-50 mt-2 w-48 bg-white divide-y divide-gray-100 rounded-lg shadow dark:bg-gray-700 dark:divide-gray-600 ${
-                  dropdownOpen ? "" : "hidden"
-                }`}
-              >
-                <div className="px-4 py-3">
-                  <span className="block text-sm text-gray-900 dark:text-white">
-                    {user.email}
-                  </span>
+          <div className="flex items-center space-x-6">
+            <div className="relative" ref={searchRef}>
+              <form onSubmit={handleSearch} className="relative">
+                <input
+                  type="text"
+                  className="w-96 pl-10 pr-4 py-2 rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:text-white transition-all duration-300 hover:shadow-md"
+                  placeholder="Search..."
+                  value={searchQuery}
+                  onChange={handleSearchChange}
+                />
+                <button
+                  type="submit"
+                  className="absolute inset-y-0 left-0 pl-3 flex items-center"
+                >
+                  <FaSearch className="h-5 w-5 text-gray-400" />
+                </button>
+              </form>
+              {searchResults.length > 0 && (
+                <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-700 rounded-md shadow-lg">
+                  {searchResults.map((result, index) => (
+                    <div
+                      key={index}
+                      className="px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer"
+                      onClick={() => {
+                        setSearchQuery(result);
+                        setSearchResults([]);
+                      }}
+                    >
+                      {result}
+                    </div>
+                  ))}
                 </div>
-                <ul className="py-2">
-                  <li>
-                    <Link
-                      to={`/profile/${user.uid}`}
-                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 dark:text-gray-200 dark:hover:text-white"
-                      onClick={toggleDropdown}
-                    >
+              )}
+            </div>
+
+            <Link
+              to="/sell"
+              className="hidden md:flex px-4 py-2 rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-300 ease-in-out transform hover:-translate-y-1 hover:shadow-lg"
+            >
+              <MdPostAdd className="inline-block mr-1" /> Post Ad
+            </Link>
+
+            <Link
+              to="/cart"
+              className="text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-white transition duration-300 ease-in-out transform hover:scale-110"
+            >
+              <FaShoppingCart className="h-6 w-6" />
+            </Link>
+
+            {user ? (
+              <div className="relative" ref={dropdownRef}>
+                <button
+                  type="button"
+                  className="flex items-center space-x-2 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 rounded-full transition duration-300 ease-in-out transform hover:scale-105"
+                  onClick={toggleDropdown}
+                >
+                  {photoUrl ? (
+                    <img
+                      className="h-10 w-10 rounded-full object-cover border-2 border-blue-500"
+                      src={photoUrl}
+                      alt={userName}
+                    />
+                  ) : (
+                    <FaUserAlt className="h-10 w-10 rounded-full p-2 bg-gray-200 text-gray-600" />
+                  )}
+                </button>
+
+                {dropdownOpen && (
+                  <div className="absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white dark:bg-gray-700 ring-1 ring-black ring-opacity-5 focus:outline-none z-50">
+                    <div className="px-4 py-2 text-sm text-gray-700 dark:text-gray-200 border-b border-gray-200 dark:border-gray-600">
+                      {userName}
+                    </div>
+                    <DropdownLink to={`/profile/${user.uid}`} icon={FaUserAlt}>
                       Profile
-                    </Link>
-                  </li>
-                  <li>
-                    <Link
-                      to="/favorites"
-                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 dark:text-gray-200 dark:hover:text-white"
-                      onClick={toggleDropdown}
-                    >
+                    </DropdownLink>
+                    <DropdownLink to="/favorites" icon={FaHeart}>
                       My Favorites
-                    </Link>
-                  </li>
-                  <li>
-                    <Link
-                      to="/chat"
-                      className={`block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 ${
-                        unread.length
-                          ? "bg-red-500 bg-opacity-20 hover:bg-opacity-30"
-                          : "hover:bg-gray-100 dark:hover:bg-gray-600"
-                      }`}
-                      onClick={toggleDropdown}
+                    </DropdownLink>
+                    <DropdownLink 
+                      to="/chat" 
+                      icon={FaComments}
+                      className={unread.length ? "bg-red-50 dark:bg-red-900/50" : ""}
                     >
                       Chat
-                    </Link>
-                  </li>
-
-
-
-                  <li>
+                      {unread.length > 0 && (
+                        <span className="ml-1 bg-red-500 text-white text-xs font-bold rounded-full px-2 py-0.5">
+                          {unread.length}
+                        </span>
+                      )}
+                    </DropdownLink>
                     <button
                       onClick={() => {
                         handleSignout();
                         toggleDropdown();
                       }}
-                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 dark:text-gray-200 dark:hover:text-white"
+                      className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-600 transition duration-300 ease-in-out"
                     >
-                      Sign out
+                      <FaSignOutAlt className="inline-block mr-2" /> Sign out
                     </button>
-                  </li>
-                </ul>
+                  </div>
+                )}
               </div>
-            </div>
-          ) : (
-            <div className="flex space-x-2">
-              <Link
-                className="ml-4 w-full inline-block text-center text-white bg-gradient-to-r from-purple-400 to-indigo-500 hover:from-indigo-500 hover:to-purple-400 focus:ring-4 focus:outline-none focus:ring-blue-300 font-semibold rounded-lg text-sm px-6 py-3 transition-transform transform hover:scale-105 shadow-lg hover:shadow-xl"
-                to="/auth/register"
-              >
-                Register
-              </Link>
-              <Link
-                className="ml-4 w-full inline-block text-center text-white bg-gradient-to-r from-purple-400 to-indigo-500 hover:from-indigo-500 hover:to-purple-400 focus:ring-4 focus:outline-none focus:ring-blue-300 font-semibold rounded-lg text-sm px-6 py-3 transition-transform transform hover:scale-105 shadow-lg hover:shadow-xl"
-                to="/auth/login"
-              >
-                Login
-              </Link>
-            </div>
-          )}
-        </div>
-
-        {/* Navbar links for larger screens */}
-        <div className="hidden md:flex space-x-8">
-          <Link className="text-gray-900 hover:text-blue-700 dark:text-white dark:hover:text-blue-500" to="/sell">
-            Sell
-          </Link>
-          <Link className="text-gray-900 hover:text-blue-700 dark:text-white dark:hover:text-blue-500" to="/buy">
-            Buy
-          </Link>
-          <Link className="text-gray-900 hover:text-blue-700 dark:text-white dark:hover:text-blue-500" to="/swap">
-            Swap
-          </Link>
-          <Link className="text-gray-900 hover:text-blue-700 dark:text-white dark:hover:text-blue-500" to="/donate">
-            Donate
-          </Link>
+            ) : (
+              <div className="flex items-center space-x-2">
+                <AuthButton to="/auth/register">Register</AuthButton>
+                <AuthButton to="/auth/login" variant="outline">Login</AuthButton>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </nav>
   );
 };
+
+const NavLink = ({ to, children }) => (
+  <Link
+    to={to}
+    className="text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-white px-4 py-2 rounded-md text-sm font-medium transition duration-300 ease-in-out hover:bg-blue-100 dark:hover:bg-blue-900 relative group"
+  >
+    {children}
+    <span className="absolute bottom-0 left-0 w-full h-0.5 bg-blue-600 transform scale-x-0 transition-transform duration-300 ease-in-out group-hover:scale-x-100"></span>
+  </Link>
+);
+
+const DropdownLink = ({ to, icon: Icon, children, className = "" }) => (
+  <Link
+    to={to}
+    className={`block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-600 transition duration-300 ease-in-out ${className}`}
+  >
+    <Icon className="inline-block mr-2" /> {children}
+  </Link>
+);
+
+const AuthButton = ({ to, children, variant = "default" }) => (
+  <Link
+    to={to}
+    className={`px-4 py-2 rounded-md text-sm font-medium transition duration-300 ease-in-out transform hover:-translate-y-1 hover:shadow-lg ${
+      variant === "outline"
+        ? "text-blue-600 bg-white border border-blue-600 hover:bg-blue-50"
+        : "text-white bg-blue-600 hover:bg-blue-700"
+    } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500`}
+  >
+    {children}
+  </Link>
+);
 
 export default Navbar;
