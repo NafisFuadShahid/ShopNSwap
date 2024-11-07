@@ -1,20 +1,20 @@
 import React, { useState, useEffect } from "react";
 import { collection, query, where, getDocs } from "firebase/firestore";
 import { db } from "../firebaseConfig";
-import { auth } from "../firebaseConfig"; // To access current user UID
+import { auth } from "../firebaseConfig";
 import AdCard from "../components/AdCard";
-import { Link } from "react-router-dom";
 
 const Buy = () => {
   const [buyAds, setBuyAds] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [sortBy, setSortBy] = useState("newest");
 
   const fetchBuyAds = async () => {
     setLoading(true);
-    setError(null);  // Reset error on each fetch attempt
+    setError(null);  
     try {
-      // Check if user is logged in before making the query
       if (!auth.currentUser) {
         setError("You must be logged in to view buy listings.");
         setLoading(false);
@@ -25,11 +25,11 @@ const Buy = () => {
       const q = query(
         adsRef,
         where("adType", "==", "sell"),
-        where("postedBy", "!=", auth.currentUser?.uid) // Exclude ads posted by the current user
+        where("postedBy", "!=", auth.currentUser?.uid) 
       );
-      
+
       const querySnapshot = await getDocs(q);
-      
+
       if (querySnapshot.empty) {
         setError("No buy listings available at the moment.");
       }
@@ -51,9 +51,21 @@ const Buy = () => {
     fetchBuyAds();
   }, []);
 
+  const filteredAds = buyAds.filter((ad) =>
+    ad.title.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const sortedAds = [...filteredAds].sort((a, b) => {
+    if (sortBy === "newest") return b.publishedAt - a.publishedAt;
+    if (sortBy === "oldest") return a.publishedAt - b.publishedAt;
+    if (sortBy === "priceLowToHigh") return a.price - b.price;
+    if (sortBy === "priceHighToLow") return b.price - a.price;
+    return 0;
+  });
+
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-screen bg-gray-100">
+      <div className="flex justify-center items-center h-screen bg-gradient-to-r from-blue-100 to-purple-100">
         <div className="text-center">
           <svg className="w-24 h-24 mx-auto mb-4" viewBox="0 0 100 100">
             <circle
@@ -115,17 +127,43 @@ const Buy = () => {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h2 className="text-3xl font-bold mb-6 text-gray-800">Buy Listings</h2>
-      {buyAds.length === 0 ? (
-        <p className="text-xl text-gray-600">No buy listings available at the moment.</p>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {buyAds.map((ad) => (
-            <AdCard key={ad.id} ad={ad} />
-          ))}
+    <div className="min-h-screen bg-gradient-to-r from-blue-50 to-purple-50 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="container mx-auto">
+        <div className="text-center mb-12">
+          <h2 className="text-4xl font-extrabold text-gray-900 mb-4">Discover Amazing Deals</h2>
+          <p className="text-xl text-gray-600">Find the perfect items at unbeatable prices</p>
         </div>
-      )}
+
+        <div className="flex flex-col sm:flex-row justify-between items-center mb-8 space-y-4 sm:space-y-0">
+          <input
+            type="text"
+            placeholder="Search listings..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-4 pr-4 py-2 w-64 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value)}
+            className="mt-4 sm:mt-0 border border-gray-300 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="newest">Newest</option>
+            <option value="oldest">Oldest</option>
+            <option value="priceLowToHigh">Price: Low to High</option>
+            <option value="priceHighToLow">Price: High to Low</option>
+          </select>
+        </div>
+
+        {sortedAds.length === 0 ? (
+          <p className="text-xl text-gray-600">No buy listings available at the moment.</p>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            {sortedAds.map((ad) => (
+              <AdCard key={ad.id} ad={ad} />
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 };
