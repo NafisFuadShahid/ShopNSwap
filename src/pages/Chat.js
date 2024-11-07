@@ -224,7 +224,7 @@ const Chat = () => {
             </div>
             <div className="border-t border-gray-200 pt-4">
               <h4 className="font-semibold mb-2">Product Details</h4>
-              <p><strong>Price:</strong> ${chat.ad.price}</p>
+              <p><strong>Price:</strong> ৳{chat.ad.price}</p>
               <p><strong>Category:</strong> {chat.ad.category}</p>
               <p><strong>Description:</strong> {chat.ad.description}</p>
             </div>
