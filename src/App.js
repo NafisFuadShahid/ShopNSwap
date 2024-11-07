@@ -16,6 +16,8 @@ import Footer from "./components/Footer"; // Import the Footer component
 import Chat from "./pages/Chat";
 import Chatbot from "./pages/Chatbot";
 import Swap from "./pages/Swap";
+import Donate from "./pages/Donate";
+import Buy from "./pages/Buy";
 
 function App() {
   return (
@@ -29,6 +31,8 @@ function App() {
             <Route path="/chat" element={<Chat />} />
             <Route path="/chatbot" element={<Chatbot />} />
             <Route path="/swap" element={<Swap />} />
+            <Route path="/donate" element={<Donate />} />
+            <Route path="/buy" element={<Buy />} />
           </Route>
           <Route path="/auth/register" element={<Register />} />
           <Route path="/auth/login" element={<Login />} />

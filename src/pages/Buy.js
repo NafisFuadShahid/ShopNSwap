@@ -1,33 +1,54 @@
 import React, { useState, useEffect } from "react";
 import { collection, query, where, getDocs } from "firebase/firestore";
 import { db } from "../firebaseConfig";
+import { auth } from "../firebaseConfig"; // To access current user UID
 import AdCard from "../components/AdCard";
+import { Link } from "react-router-dom";
 
-const Donate = () => {
-  const [donateAds, setDonateAds] = useState([]);
+const Buy = () => {
+  const [buyAds, setBuyAds] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const fetchDonateAds = async () => {
+  const fetchBuyAds = async () => {
     setLoading(true);
+    setError(null);  // Reset error on each fetch attempt
     try {
+      // Check if user is logged in before making the query
+      if (!auth.currentUser) {
+        setError("You must be logged in to view buy listings.");
+        setLoading(false);
+        return;
+      }
+
       const adsRef = collection(db, "ads");
-      const q = query(adsRef, where("adType", "==", "donate"));
+      const q = query(
+        adsRef,
+        where("adType", "==", "sell"),
+        where("postedBy", "!=", auth.currentUser?.uid) // Exclude ads posted by the current user
+      );
+      
       const querySnapshot = await getDocs(q);
+      
+      if (querySnapshot.empty) {
+        setError("No buy listings available at the moment.");
+      }
 
       const ads = querySnapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
       }));
-      setDonateAds(ads);
+      setBuyAds(ads);
     } catch (error) {
-      console.error("Error fetching donate ads:", error);
+      console.error("Error fetching ads:", error);
+      setError("There was an error fetching the ads. Please try again later.");
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchDonateAds();
+    fetchBuyAds();
   }, []);
 
   if (loading) {
@@ -79,20 +100,28 @@ const Donate = () => {
               <div className="h-full w-full bg-blue-500 rounded-full animate-loading-bar"></div>
             </div>
           </div>
-          <p className="mt-4 text-lg font-medium text-gray-700">Loading donate ads...</p>
+          <p className="mt-4 text-lg font-medium text-gray-700">Loading sell ads...</p>
         </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center mt-5">
+        <p className="text-xl text-gray-600">{error}</p>
       </div>
     );
   }
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h2 className="text-3xl font-bold mb-6 text-gray-800">Donate Listings</h2>
-      {donateAds.length === 0 ? (
-        <p className="text-xl text-gray-600">No donate listings available at the moment.</p>
+      <h2 className="text-3xl font-bold mb-6 text-gray-800">Buy Listings</h2>
+      {buyAds.length === 0 ? (
+        <p className="text-xl text-gray-600">No buy listings available at the moment.</p>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {donateAds.map((ad) => (
+          {buyAds.map((ad) => (
             <AdCard key={ad.id} ad={ad} />
           ))}
         </div>
@@ -101,4 +130,4 @@ const Donate = () => {
   );
 };
 
-export default Donate;
+export default Buy;
