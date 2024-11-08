@@ -1,5 +1,5 @@
 import { signOut } from "firebase/auth";
-import { doc, updateDoc, onSnapshot } from "firebase/firestore";
+import { doc, updateDoc, onSnapshot, collection, getDocs, query, where } from "firebase/firestore";
 import React, { useContext, useEffect, useState, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { AuthContext } from "../context/auth";
@@ -33,8 +33,6 @@ const Navbar = () => {
     }
   }, [user]);
 
-  
-
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -67,22 +65,45 @@ const Navbar = () => {
     }
   };
 
-  const handleSearchChange = (e) => {
-    const query = e.target.value;
-    setSearchQuery(query);
-    // Simulated search results - replace with actual API call or database query
-    const simulatedResults = [
-      "iPhone 12",
-      "Samsung Galaxy S21",
-      "MacBook Pro",
-      "Sony PlayStation 5",
-      "Nintendo Switch",
-    ].filter(item => item.toLowerCase().includes(query.toLowerCase()));
-    setSearchResults(simulatedResults);
+  const handleSearchChange = async (e) => {
+    const queryText = e.target.value;
+    setSearchQuery(queryText);
+
+    if (queryText.trim()) {
+      const adsRef = collection(db, "ads");
+      const q = query(
+        adsRef,
+        where("title", ">=", queryText.toLowerCase()),
+        where("title", "<=", queryText.toLowerCase() + "\uf8ff"),
+        
+      );
+
+    console.log("Search Query:", queryText);  // Log the search term being used
+    console.log("Firestore Query:", q); 
+
+      try {
+        const querySnapshot = await getDocs(q);
+        const results = querySnapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+
+        setSearchResults(results);
+        console.log("Search Results:", results);
+      } catch (error) {
+        console.error("Error fetching search results:", error);
+      }
+    } else {
+      setSearchResults([]);
+    }
   };
 
   const toggleDropdown = () => {
     setDropdownOpen(!dropdownOpen);
+  };
+
+  const closeDropdown = () => {
+    setDropdownOpen(false);
   };
 
   return (
@@ -126,17 +147,19 @@ const Navbar = () => {
               </form>
               {searchResults.length > 0 && (
                 <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-700 rounded-md shadow-lg">
-                  {searchResults.map((result, index) => (
+                  {searchResults.map((result) => (
                     <div
-                      key={index}
+                      key={result.id}
                       className="px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer"
                       onClick={() => {
-                        setSearchQuery(result);
+                        setSearchQuery(result.title);
                         setSearchResults([]);
-                        navigate(`/search?q=${encodeURIComponent(result)}`);
+                        navigate(`/ad/${result.id}`);
                       }}
                     >
-                      {result}
+                      <div className="font-medium">{result.title}</div>
+                      <div className="text-sm text-gray-500 dark:text-gray-300">{result.category}</div>
+                      <div className="text-sm text-gray-500 dark:text-gray-300">BDT{result.price}</div>
                     </div>
                   ))}
                 </div>
@@ -180,15 +203,16 @@ const Navbar = () => {
                     <div className="px-4 py-2 text-sm text-gray-700 dark:text-gray-200 border-b border-gray-200 dark:border-gray-600">
                       {userName}
                     </div>
-                    <DropdownLink to={`/profile/${user.uid}`} icon={FaUserAlt}>
+                    <DropdownLink to={`/profile/${user.uid}`} icon={FaUserAlt} onClick={closeDropdown}>
                       Profile
                     </DropdownLink>
-                    <DropdownLink to="/favorites" icon={FaHeart}>
+                    <DropdownLink to="/favorites" icon={FaHeart} onClick={closeDropdown}>
                       My Favorites
                     </DropdownLink>
                     <DropdownLink 
                       to="/chat" 
                       icon={FaComments}
+                      onClick={closeDropdown}
                       className={unread.length ? "bg-red-50 dark:bg-red-900/50" : ""}
                     >
                       Chat
@@ -233,12 +257,14 @@ const NavLink = ({ to, children }) => (
   </Link>
 );
 
-const DropdownLink = ({ to, icon: Icon, children, className = "" }) => (
+const DropdownLink = ({ to, icon: Icon, children, onClick, className }) => (
   <Link
     to={to}
-    className={`block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-600 transition duration-300 ease-in-out ${className}`}
+    onClick={onClick}
+    className={`flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-600 transition duration-300 ease-in-out ${className}`}
   >
-    <Icon className="inline-block mr-2" /> {children}
+    <Icon className="inline-block mr-2" />
+    {children}
   </Link>
 );
 
