@@ -10,8 +10,8 @@ import Moment from "react-moment";
 import useSnapshot from "../utils/useSnapshot";
 import { toggleFavorite } from "../utils/fav";
 import Sold from "../components/Sold";
-// import Axios from "axios";
-// import toast from "react-toastify";
+import Axios from "axios";
+import toast from "react-toastify";
 
 const Ad = () => {
   const { id } = useParams();
@@ -98,6 +98,26 @@ const Ad = () => {
   //     toast.error("Payment failed. Please try again.");
   //   }
   // };
+
+  const bkashPaymentHandler = async () => {
+    try {
+      await Axios.post('http://localhost:5000/bkash-checkout', {
+        amount: 1000, // your total product price here
+        callbackURL: 'http://localhost:5000/bkash-callback', 
+        orderID: '1234', // your generated order id
+        reference: '12345', // random or your order reference
+      }).then((response) => {
+        //check backend response
+        console.log(response);
+        window.location.href = response?.data; // get url and redirect to Bkash pop up window
+      })
+      .catch((err) => {
+        console.log(err);
+      });
+    } catch (error) {
+      console.log(error);
+    }
+  };
 
   return ad ? (
     <div className="container mx-auto px-4 py-8 max-w-6xl">
@@ -259,6 +279,14 @@ const Ad = () => {
                     onClick={createChatroom}
                   >
                     <FaComments size={16} className="mr-2" /> Chat with Seller
+                  </button>
+                )}
+                {ad.adType === "sell" && ad.postedBy !== auth.currentUser?.uid && (
+                  <button
+                className="action-button bg-yellow-500 hover:bg-yellow-600 text-white py-3 px-4 rounded-lg flex items-center justify-center"
+                onClick={bkashPaymentHandler}
+                  >
+                  Pay with bKash
                   </button>
                 )}
               </div>
