@@ -1,11 +1,5 @@
-"use client";
-
 import React, { useEffect, useState } from "react";
-import {
-  useStripe,
-  useElements,
-  PaymentElement,
-} from "@stripe/react-stripe-js";
+import { useStripe, useElements, PaymentElement } from "@stripe/react-stripe-js";
 
 const convertToSubcurrency = (amount, factor = 100) => {
   return Math.round(amount * factor);
@@ -19,7 +13,8 @@ const CheckoutPage = ({ amount }) => {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    fetch("/api/create-payment-intent", {
+    // Fetch the client secret from the backend
+    fetch("http://localhost:5000/create-payment-intent", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -27,7 +22,14 @@ const CheckoutPage = ({ amount }) => {
       body: JSON.stringify({ amount: convertToSubcurrency(amount) }),
     })
       .then((res) => res.json())
-      .then((data) => setClientSecret(data.clientSecret));
+      .then((data) => {
+        if (data.clientSecret) {
+          setClientSecret(data.clientSecret);
+        } else {
+          console.error("Failed to fetch client secret:", data);
+        }
+      })
+      .catch((error) => console.error("Error fetching client secret:", error));
   }, [amount]);
 
   const handleSubmit = async (event) => {
@@ -38,6 +40,7 @@ const CheckoutPage = ({ amount }) => {
       return;
     }
 
+    // Submit payment details
     const { error: submitError } = await elements.submit();
 
     if (submitError) {
@@ -46,21 +49,17 @@ const CheckoutPage = ({ amount }) => {
       return;
     }
 
+    // Confirm payment
     const { error } = await stripe.confirmPayment({
       elements,
       clientSecret,
       confirmParams: {
-        return_url: `http://www.localhost:3000/payment-success?amount=${amount}`,
+        return_url: `http://localhost:3000/payment-success?amount=${amount}`,
       },
     });
 
     if (error) {
-      // This point is only reached if there's an immediate error when
-      // confirming the payment. Show the error to your customer (for example, payment details incomplete)
       setErrorMessage(error.message);
-    } else {
-      // The payment UI automatically closes with a success animation.
-      // Your customer is redirected to your `return_url`.
     }
 
     setLoading(false);
@@ -85,7 +84,7 @@ const CheckoutPage = ({ amount }) => {
     <form onSubmit={handleSubmit} className="bg-white p-2 rounded-md">
       {clientSecret && <PaymentElement />}
 
-      {errorMessage && <div>{errorMessage}</div>}
+      {errorMessage && <div className="text-red-500 mt-2">{errorMessage}</div>}
 
       <button
         disabled={!stripe || loading}
