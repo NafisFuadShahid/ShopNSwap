@@ -10,6 +10,8 @@ import Moment from "react-moment";
 import useSnapshot from "../utils/useSnapshot";
 import { toggleFavorite } from "../utils/fav";
 import Sold from "../components/Sold";
+// import Axios from "axios";
+// import toast from "react-toastify";
 
 const Ad = () => {
   const { id } = useParams();
@@ -80,6 +82,22 @@ const Ad = () => {
 
     navigate("/chat", { state: { ad } });
   };
+
+  // // Function to handle bKash payment
+  // const bkashPaymentHandler = async () => {
+  //   try {
+  //     const result = await Axios.post("http://localhost:5000/api/bkash/create"); // Adjust URL as necessary
+
+  //     if (result?.data?.status) {
+  //       window.location.href = result?.data?.data?.data?.bkashURL;
+  //     } else {
+  //       toast.error("Something went wrong");
+  //     }
+  //   } catch (error) {
+  //     console.log(error);
+  //     toast.error("Payment failed. Please try again.");
+  //   }
+  // };
 
   return ad ? (
     <div className="container mx-auto px-4 py-8 max-w-6xl">
