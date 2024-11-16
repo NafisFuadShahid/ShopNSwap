@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { AiOutlineHeart, AiFillHeart, AiOutlineStar, AiOutlineShoppingCart } from "react-icons/ai";
+import { Link } from "react-router-dom";
+import { AiOutlineHeart, AiFillHeart, AiOutlineStar } from "react-icons/ai";
 import Moment from "react-moment";
 import { auth } from "../firebaseConfig";
 import useSnapshot from "../utils/useSnapshot";
@@ -8,7 +8,6 @@ import { toggleFavorite } from "../utils/fav";
 import Sold from "./Sold";
 
 const AdCard = ({ ad }) => {
-  const navigate = useNavigate();
   const { val } = useSnapshot("favorites", ad.adId);
   const adLink = `/${ad.category.toLowerCase()}/${ad.adId}`;
   const isFavorite = val?.users?.includes(auth.currentUser?.uid);
@@ -18,13 +17,10 @@ const AdCard = ({ ad }) => {
     setIsAnimating(true);
     toggleFavorite(val.users, ad.adId);
     
+    // Reset animation state after the animation completes
     setTimeout(() => {
       setIsAnimating(false);
-    }, 300);
-  };
-
-  const handleBuyNow = () => {
-    navigate("/Payment", { state: { ad } });
+    }, 300); // Duration should match the CSS animation duration
   };
 
   return (
@@ -85,21 +81,12 @@ const AdCard = ({ ad }) => {
           </div>
         </div>
 
-        <div className="flex space-x-2">
-          <Link
-            to={adLink}
-            className="flex-1 text-center text-white bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-indigo-500 hover:to-purple-500 focus:ring-2 focus:ring-indigo-400 rounded-md text-sm px-3 py-2 transition-transform transform hover:scale-105"
-          >
-            View Details
-          </Link>
-          <button
-            onClick={handleBuyNow}
-            className="flex-1 text-center text-white bg-gradient-to-r from-green-500 to-teal-500 hover:from-teal-500 hover:to-green-500 focus:ring-2 focus:ring-green-400 rounded-md text-sm px-3 py-2 transition-transform transform hover:scale-105"
-          >
-            <AiOutlineShoppingCart className="inline-block mr-1" />
-            Buy Now
-          </button>
-        </div>
+        <Link
+          to={adLink}
+          className="block text-center text-white bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-indigo-500 hover:to-purple-500 focus:ring-2 focus:ring-indigo-400 rounded-md text-sm px-3 py-2 transition-transform transform hover:scale-105"
+        >
+          View Details
+        </Link>
       </div>
     </div>
   );

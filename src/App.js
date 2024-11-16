@@ -19,8 +19,7 @@ import Swap from "./pages/Swap";
 import Donate from "./pages/Donate";
 import Buy from "./pages/Buy";
 import SearchResults from "./pages/SearchResults";
-import CheckoutPage from './pages/CheckoutPage';
-import Payment from './pages/Payment';
+
 
 function App() {
   return (
@@ -31,8 +30,6 @@ function App() {
           <Route element={<PrivateRoute />}>
             <Route path="/sell" element={<Sell />} />
             <Route path="/favorites" element={<MyFavorites />} />
-            <Route path="/Payment" element={<Payment />} />
-            <Route path="/CheckoutPage" element={<CheckoutPage />} />
             <Route path="/chat" element={<Chat />} />
             <Route path="/chatbot" element={<Chatbot />} />
             <Route path="/swap" element={<Swap />} />
