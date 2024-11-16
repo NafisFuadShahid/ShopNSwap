@@ -24,7 +24,7 @@ const AdCard = ({ ad }) => {
   };
 
   const handleBuyNow = () => {
-    navigate("/payment", { state: { ad } });
+    navigate("/Payment", { state: { ad } });
   };
 
   return (

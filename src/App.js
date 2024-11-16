@@ -31,7 +31,7 @@ function App() {
           <Route element={<PrivateRoute />}>
             <Route path="/sell" element={<Sell />} />
             <Route path="/favorites" element={<MyFavorites />} />
-            <Route path="/Paymen" element={<Payment />} />
+            <Route path="/Payment" element={<Payment />} />
             <Route path="/CheckoutPage" element={<CheckoutPage />} />
             <Route path="/chat" element={<Chat />} />
             <Route path="/chatbot" element={<Chatbot />} />
