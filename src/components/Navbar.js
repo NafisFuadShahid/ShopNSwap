@@ -17,6 +17,7 @@ const MapPopup = ({ isOpen, onClose, userLocation, onLocationUpdate }) => {
 
   const [map, setMap] = useState(null);
   const [marker, setMarker] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   const onLoad = useCallback(function callback(map) {
     const bounds = new window.google.maps.LatLngBounds(userLocation);
@@ -32,7 +33,7 @@ const MapPopup = ({ isOpen, onClose, userLocation, onLocationUpdate }) => {
   const handleMapClick = (event) => {
     const lat = event.latLng.lat();
     const lng = event.latLng.lng();
-    setMarker({ lat, lng });
+    updateMarkerAndCenter({ lat, lng });
   };
 
   const handleConfirm = () => {
@@ -42,7 +43,16 @@ const MapPopup = ({ isOpen, onClose, userLocation, onLocationUpdate }) => {
     }
   };
 
+  const updateMarkerAndCenter = (location) => {
+    setMarker(location);
+    if (map) {
+      map.panTo(location);
+      map.setZoom(15);
+    }
+  };
+
   const handleCurrentLocation = () => {
+    setIsLoading(true);
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
@@ -52,21 +62,38 @@ const MapPopup = ({ isOpen, onClose, userLocation, onLocationUpdate }) => {
           };
   
           console.log("Current Location:", currentLocation);
-  
-          setMarker(currentLocation);
-          if (map) {
-            map.panTo(currentLocation);
-            map.setZoom(15);
-          }
+          updateMarkerAndCenter(currentLocation);
+          setIsLoading(false);
         },
         (error) => {
-          console.error("Error fetching geolocation:", error);
-          alert("Unable to fetch your location. Please try again.");
+          console.error("Geolocation error:", error);
+          let errorMessage = "Unable to fetch your location. ";
+          switch(error.code) {
+            case error.PERMISSION_DENIED:
+              errorMessage += "User denied the request for Geolocation.";
+              break;
+            case error.POSITION_UNAVAILABLE:
+              errorMessage += "Location information is unavailable.";
+              break;
+            case error.TIMEOUT:
+              errorMessage += "The request to get user location timed out.";
+              break;
+            default:
+              errorMessage += "An unknown error occurred.";
+              break;
+          }
+          alert(errorMessage);
+          setIsLoading(false);
         },
-        { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+        { 
+          enableHighAccuracy: true, 
+          timeout: 10000, 
+          maximumAge: 0 
+        }
       );
     } else {
       alert("Geolocation is not supported by your browser.");
+      setIsLoading(false);
     }
   };
 
@@ -100,8 +127,13 @@ const MapPopup = ({ isOpen, onClose, userLocation, onLocationUpdate }) => {
               onClick={handleCurrentLocation}
               className="absolute bottom-4 left-4 p-2 bg-white rounded-full shadow-md hover:bg-gray-100 transition-colors z-10"
               title="Use current location"
+              disabled={isLoading}
             >
-              <FaCrosshairs className="w-5 h-5 text-blue-600" />
+              {isLoading ? (
+                <span className="animate-spin">⏳</span>
+              ) : (
+                <FaCrosshairs className="w-5 h-5 text-blue-600" />
+              )}
             </button>
           </div>
         ) : (
