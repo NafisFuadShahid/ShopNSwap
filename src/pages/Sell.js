@@ -1,11 +1,15 @@
-import React, { useState } from "react";
+import React, { useState, useCallback, useEffect, useContext } from "react";
 import { PiUploadDuotone } from "react-icons/pi";
-import { FaMapMarkerAlt, FaCheck } from "react-icons/fa";
+import { FaUserAlt, FaSearch, FaHeart,FaCheck, FaComments, FaSignOutAlt, FaMapMarkerAlt, FaCrosshairs } from "react-icons/fa";
 import { ref, getDownloadURL, uploadBytes } from "firebase/storage";
 import { addDoc, collection, doc, setDoc, Timestamp } from "firebase/firestore";
 import { storage, db, auth } from "../firebaseConfig";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
+import { GoogleMap, useJsApiLoader, Marker } from '@react-google-maps/api';
+import 'bootstrap/dist/css/bootstrap.min.css';
+import { AuthContext } from "../context/auth";
+
 
 const categories = [
   "Vehicles", "Property", "Electronics", "Home & Garden", "Fashion & Beauty",
@@ -14,8 +18,148 @@ const categories = [
   "Education", "Travel & Tourism", "Events", "Agriculture & Farming", "Others"
 ];
 
+const MapPopup = ({ isOpen, onClose, userLocation, onLocationUpdate }) => {
+  const { isLoaded } = useJsApiLoader({
+    id: 'google-map-script',
+    googleMapsApiKey: "AIzaSyAkUsqwZWtJN6Ezct2VeoD4T6GTIM4wm7M"
+  });
+
+  const [map, setMap] = useState(null);
+  const [marker, setMarker] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const onLoad = useCallback(function callback(map) {
+    const bounds = new window.google.maps.LatLngBounds(userLocation);
+    map.fitBounds(bounds);
+    setMap(map);
+    setMarker(userLocation);
+  }, [userLocation]);
+
+  const onUnmount = useCallback(function callback(map) {
+    setMap(null);
+  }, []);
+
+  const handleMapClick = (event) => {
+    const lat = event.latLng.lat();
+    const lng = event.latLng.lng();
+    updateMarkerAndCenter({ lat, lng });
+  };
+
+  const handleConfirm = () => {
+    if (marker) {
+      onLocationUpdate(marker.lat, marker.lng);
+      onClose();
+    }
+  };
+
+  const updateMarkerAndCenter = (location) => {
+    setMarker(location);
+    if (map) {
+      map.panTo(location);
+      map.setZoom(15);
+    }
+  };
+
+  const handleCurrentLocation = () => {
+    setIsLoading(true);
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const currentLocation = {
+            lat: position.coords.latitude,
+            lng: position.coords.longitude,
+          };
+  
+          console.log("Current Location:", currentLocation);
+          updateMarkerAndCenter(currentLocation);
+          setIsLoading(false);
+        },
+        (error) => {
+          console.error("Geolocation error:", error);
+          let errorMessage = "Unable to fetch your location. ";
+          switch(error.code) {
+            case error.PERMISSION_DENIED:
+              errorMessage += "User denied the request for Geolocation.";
+              break;
+            case error.POSITION_UNAVAILABLE:
+              errorMessage += "Location information is unavailable.";
+              break;
+            case error.TIMEOUT:
+              errorMessage += "The request to get user location timed out.";
+              break;
+            default:
+              errorMessage += "An unknown error occurred.";
+              break;
+          }
+          alert(errorMessage);
+          setIsLoading(false);
+        },
+        { 
+          enableHighAccuracy: true, 
+          timeout: 10000, 
+          maximumAge: 0 
+        }
+      );
+    } else {
+      alert("Geolocation is not supported by your browser.");
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (isLoaded && map) {
+      const bounds = new window.google.maps.LatLngBounds(userLocation);
+      map.fitBounds(bounds);
+      setMarker(userLocation);
+    }
+  }, [isLoaded, map, userLocation]);
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white p-4 rounded-lg shadow-lg w-[80vw] max-w-3xl">
+        <h2 className="text-xl font-bold mb-4">Update Your Location</h2>
+        {isLoaded ? (
+          <div className="relative">
+            <GoogleMap
+              mapContainerStyle={{ width: '100%', height: '400px' }}
+              center={userLocation}
+              zoom={10}
+              onLoad={onLoad}
+              onUnmount={onUnmount}
+              onClick={handleMapClick}
+            >
+              {marker && <Marker position={marker} />}
+            </GoogleMap>
+            <button
+              onClick={handleCurrentLocation}
+              className="absolute bottom-4 left-4 p-2 bg-white rounded-full shadow-md hover:bg-gray-100 transition-colors z-10"
+              title="Use current location"
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <span className="animate-spin">⏳</span>
+              ) : (
+                <FaCrosshairs className="w-5 h-5 text-blue-600" />
+              )}
+            </button>
+          </div>
+        ) : (
+          <div>Loading...</div>
+        )}
+        <div className="mt-4 flex justify-end space-x-2">
+          <button onClick={onClose} className="px-4 py-2 bg-gray-200 rounded">Cancel</button>
+          <button onClick={handleConfirm} className="px-4 py-2 bg-blue-500 text-white rounded">Confirm</button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const Sell = () => {
   const navigate = useNavigate();
+  const { user } = useContext(AuthContext);
 
   const [values, setValues] = useState({
     images: [],
@@ -36,8 +180,15 @@ const Sell = () => {
   const [imagePreviews, setImagePreviews] = useState([]);
   const [errors, setErrors] = useState({});
   const [locationSaved, setLocationSaved] = useState(false);
+  const [showMapPopup, setShowMapPopup] = useState(false);
 
   const { images, title, category, price, address, contact, description, isNew, listingType, error, loading, lat, lon } = values;
+
+  useEffect(() => {
+    if (!user) {
+      navigate("/auth/login");
+    }
+  }, [user, navigate]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -59,29 +210,17 @@ const Sell = () => {
   };
 
   const handleLocationClick = () => {
-    if (!navigator.geolocation) {
-      setErrors({ ...errors, location: "Geolocation is not supported by your browser" });
-      return;
-    }
+    setShowMapPopup(true);
+  };
 
-    setValues({ ...values, loading: true });
-
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        setValues({
-          ...values,
-          lat: position.coords.latitude.toString(),
-          lon: position.coords.longitude.toString(),
-          loading: false,
-        });
-        setLocationSaved(true);
-        setTimeout(() => setLocationSaved(false), 3000); // Hide tick after 3 seconds
-      },
-      () => {
-        setErrors({ ...errors, location: "Unable to retrieve your location" });
-        setValues({ ...values, loading: false });
-      }
-    );
+  const handleLocationUpdate = (lat, lng) => {
+    setValues({
+      ...values,
+      lat: lat.toString(),
+      lon: lng.toString(),
+    });
+    setLocationSaved(true);
+    setTimeout(() => setLocationSaved(false), 3000);
   };
 
   const handleSubmit = async (e) => {
@@ -438,6 +577,12 @@ const Sell = () => {
           </div>
         </form>
       </motion.div>
+      <MapPopup
+        isOpen={showMapPopup}
+        onClose={() => setShowMapPopup(false)}
+        userLocation={{ lat: parseFloat(lat) || 23.8103, lng: parseFloat(lon) || 90.4125 }}
+        onLocationUpdate={handleLocationUpdate}
+      />
     </motion.div>
   );
 };
