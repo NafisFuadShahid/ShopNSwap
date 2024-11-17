@@ -4,7 +4,7 @@ import React, { useContext, useEffect, useState, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { AuthContext } from "../context/auth";
 import { auth, db } from "../firebaseConfig";
-import { FaUserAlt, FaSearch, FaHeart, FaComments, FaSignOutAlt, FaShoppingCart } from "react-icons/fa";
+import { FaUserAlt, FaSearch, FaHeart, FaComments, FaSignOutAlt, FaMapMarkerAlt } from "react-icons/fa";
 import { MdPostAdd } from "react-icons/md";
 import 'bootstrap/dist/css/bootstrap.min.css';
 
@@ -57,11 +57,44 @@ const Navbar = () => {
     }
   };
 
+  const handleLocationClick = async () => {
+    if (!user) {
+      alert("Please login to use location services");
+      return;
+    }
+
+    const success = async (position) => {
+      const latitude = position.coords.latitude.toString();
+      const longitude = position.coords.longitude.toString();
+      
+      try {
+        await updateDoc(doc(db, "users", user.uid), {
+          lat: latitude,
+          lon: longitude,
+        });
+        alert("Location updated successfully!");
+      } catch (error) {
+        console.error("Error updating location:", error);
+        alert("Failed to update location. Please try again.");
+      }
+    };
+
+    const error = () => {
+      alert("Unable to retrieve your location. Please make sure location services are enabled.");
+    };
+
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(success, error);
+    } else {
+      alert("Geolocation is not supported by this browser.");
+    }
+  };
+
   const handleSearch = (e) => {
     e.preventDefault();
     if (searchQuery.trim()) {
       navigate(`/search?q=${encodeURIComponent(searchQuery)}`);
-      setSearchResults([]); // Clear search results after navigating
+      setSearchResults([]);
     }
   };
 
@@ -74,12 +107,8 @@ const Navbar = () => {
       const q = query(
         adsRef,
         where("title", ">=", queryText.toLowerCase()),
-        where("title", "<=", queryText.toLowerCase() + "\uf8ff"),
-        
+        where("title", "<=", queryText.toLowerCase() + "\uf8ff")
       );
-
-    console.log("Search Query:", queryText);  // Log the search term being used
-    console.log("Firestore Query:", q); 
 
       try {
         const querySnapshot = await getDocs(q);
@@ -87,9 +116,7 @@ const Navbar = () => {
           id: doc.id,
           ...doc.data(),
         }));
-
         setSearchResults(results);
-        console.log("Search Results:", results);
       } catch (error) {
         console.error("Error fetching search results:", error);
       }
@@ -173,12 +200,13 @@ const Navbar = () => {
               <MdPostAdd className="inline-block mr-1" /> Post Ad
             </Link>
 
-            <Link
-              to="/cart"
+            <button
+              onClick={handleLocationClick}
               className="text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-white transition duration-300 ease-in-out transform hover:scale-110"
+              title="Update Location"
             >
-              <FaShoppingCart className="h-6 w-6" />
-            </Link>
+              <FaMapMarkerAlt className="h-6 w-6" />
+            </button>
 
             {user ? (
               <div className="relative" ref={dropdownRef}>

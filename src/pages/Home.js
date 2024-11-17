@@ -1,14 +1,15 @@
 import React, { useState, useEffect, useRef } from "react";
 import { collection, query, where, getDocs } from "firebase/firestore";
-import { db } from "../firebaseConfig";
+import { db, auth } from "../firebaseConfig";
 import AdCard from "../components/AdCard";
-import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
+import { FaChevronLeft, FaChevronRight, FaMapMarkerAlt } from "react-icons/fa";
 import { 
   FaCar, FaHome, FaMobileAlt, FaCouch, FaTshirt, FaBriefcase, 
   FaTools, FaPaw, FaFootballBall, FaPuzzlePiece, FaBaby, 
   FaBuilding, FaMedkit, FaGraduationCap, FaPlane, FaCalendarAlt, 
   FaTractor, FaEllipsisH 
 } from 'react-icons/fa';
+import { motion, AnimatePresence } from "framer-motion";
 
 const categories = {
   "Vehicles": FaCar,
@@ -37,7 +38,53 @@ const Home = () => {
   const [sortOption, setSortOption] = useState("latest");
   const [showLeftArrow, setShowLeftArrow] = useState(false);
   const [showRightArrow, setShowRightArrow] = useState(true);
+  const [userLocation, setUserLocation] = useState(null);
+  const [showToast, setShowToast] = useState(false);
+  const [isLocationAvailable, setIsLocationAvailable] = useState(true);
   const categoryRef = useRef(null);
+
+  useEffect(() => {
+    const fetchUserLocation = async () => {
+      const userDoc = await getDocs(query(collection(db, "users"), where("uid", "==", auth.currentUser.uid)));
+      if (!userDoc.empty) {
+        const userData = userDoc.docs[0].data();
+        if (userData.lat && userData.lon) {
+          setUserLocation({ lat: parseFloat(userData.lat), lon: parseFloat(userData.lon) });
+          setIsLocationAvailable(true);
+        } else {
+          setIsLocationAvailable(false);
+          requestUserLocation();
+        }
+      } else {
+        setIsLocationAvailable(false);
+        requestUserLocation();
+      }
+    };
+
+    fetchUserLocation();
+  }, []);
+
+  const requestUserLocation = () => {
+    if ("geolocation" in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          setUserLocation({ lat: latitude, lon: longitude });
+          setIsLocationAvailable(true);
+          // Here you would typically update the user's location in Firebase
+        },
+        () => {
+          setShowToast(true);
+          setIsLocationAvailable(false);
+          setTimeout(() => setShowToast(false), 5000);
+        }
+      );
+    } else {
+      setShowToast(true);
+      setIsLocationAvailable(false);
+      setTimeout(() => setShowToast(false), 5000);
+    }
+  };
 
   const getAds = async (category = null, sortOption = "latest") => {
     const adsRef = collection(db, "ads");
@@ -60,15 +107,52 @@ const Home = () => {
         fetchedAds[type].sort((a, b) => b.price - a.price);
       } else if (sortOption === "latest") {
         fetchedAds[type].sort((a, b) => b.publishedAt - a.publishedAt);
+      } else if (sortOption === "area") {
+        if (isLocationAvailable && userLocation) {
+          fetchedAds[type] = fetchedAds[type].filter(ad => {
+            if (!ad.lat || !ad.lon) return false;
+            const distance = calculateDistance(userLocation.lat, userLocation.lon, parseFloat(ad.lat), parseFloat(ad.lon));
+            return distance <= 20; // 20km radius
+          }).sort((a, b) => {
+            if (!a.lat || !a.lon || !b.lat || !b.lon) return 0;
+            const distanceA = calculateDistance(userLocation.lat, userLocation.lon, parseFloat(a.lat), parseFloat(a.lon));
+            const distanceB = calculateDistance(userLocation.lat, userLocation.lon, parseFloat(b.lat), parseFloat(b.lon));
+            return distanceA - distanceB;
+          });
+        } else {
+          setShowToast(true);
+          setTimeout(() => setShowToast(false), 5000);
+          setSortOption("latest");
+          fetchedAds[type].sort((a, b) => b.publishedAt - a.publishedAt);
+        }
       }
     });
 
     setAds(fetchedAds);
   };
 
+  const calculateDistance = (lat1, lon1, lat2, lon2) => {
+    if (!lat1 || !lon1 || !lat2 || !lon2) return Infinity;
+    const R = 6371; // Radius of the earth in km
+    const dLat = deg2rad(lat2 - lat1);
+    const dLon = deg2rad(lon2 - lon1);
+    const a = 
+      Math.sin(dLat/2) * Math.sin(dLat/2) +
+      Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * 
+      Math.sin(dLon/2) * Math.sin(dLon/2)
+    ; 
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
+    const d = R * c; // Distance in km
+    return d;
+  };
+
+  const deg2rad = (deg) => {
+    return deg * (Math.PI/180);
+  };
+
   useEffect(() => {
     getAds(selectedCategory, sortOption);
-  }, [selectedCategory, sortOption]);
+  }, [selectedCategory, sortOption, userLocation, isLocationAvailable]);
 
   const handleCategoryClick = (category) => {
     setSelectedCategory(selectedCategory === category ? null : category);
@@ -91,7 +175,7 @@ const Home = () => {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto px-4 py-8 relative">
       <style jsx>{`
         .category-container {
           display: flex;
@@ -205,6 +289,17 @@ const Home = () => {
         .category-card:hover .category-image-container svg {
           transform: scale(1.2);
         }
+        .toast {
+          position: fixed;
+          bottom: 20px;
+          right: 20px;
+          background-color: #4b5563;
+          color: white;
+          padding: 1rem;
+          border-radius: 0.5rem;
+          box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+          z-index: 50;
+        }
       `}</style>
 
       <h2 className="text-3xl font-bold mb-6 text-gray-800">Categories</h2>
@@ -263,6 +358,7 @@ const Home = () => {
             <option value="latest">Latest</option>
             <option value="low">Price: Low to High</option>
             <option value="high">Price: High to Low</option>
+            <option value="area">Nearest to You</option>
           </select>
         </div>
       </div>
@@ -279,6 +375,22 @@ const Home = () => {
           </div>
         </div>
       ))}
+
+      <AnimatePresence>
+        {showToast && (
+          <motion.div
+            initial={{ opacity: 0, y: 50 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 50 }}
+            className="toast"
+          >
+            <div className="flex items-center">
+              <FaMapMarkerAlt className="mr-2" />
+              <span>Please allow location access to use the "Nearest to You" feature</span>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

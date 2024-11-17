@@ -1,10 +1,11 @@
 import React, { useState } from "react";
 import { PiUploadDuotone } from "react-icons/pi";
+import { FaMapMarkerAlt, FaCheck } from "react-icons/fa";
 import { ref, getDownloadURL, uploadBytes } from "firebase/storage";
 import { addDoc, collection, doc, setDoc, Timestamp } from "firebase/firestore";
 import { storage, db, auth } from "../firebaseConfig";
 import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 
 const categories = [
   "Vehicles", "Property", "Electronics", "Home & Garden", "Fashion & Beauty",
@@ -12,8 +13,6 @@ const categories = [
   "Kids & Baby Products", "Business & Industrial", "Health & Wellness",
   "Education", "Travel & Tourism", "Events", "Agriculture & Farming", "Others"
 ];
-
-const locations = ["Uttara", "Gazipur", "Mirpur"];
 
 const Sell = () => {
   const navigate = useNavigate();
@@ -23,7 +22,6 @@ const Sell = () => {
     title: "",
     category: "",
     price: "",
-    location: "",
     address: "",
     contact: "",
     description: "",
@@ -31,12 +29,15 @@ const Sell = () => {
     listingType: "sell",
     error: "",
     loading: false,
+    lat: "",
+    lon: "",
   });
 
   const [imagePreviews, setImagePreviews] = useState([]);
   const [errors, setErrors] = useState({});
+  const [locationSaved, setLocationSaved] = useState(false);
 
-  const { images, title, category, price, location, address, contact, description, isNew, listingType, error, loading } = values;
+  const { images, title, category, price, address, contact, description, isNew, listingType, error, loading, lat, lon } = values;
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -57,6 +58,32 @@ const Sell = () => {
     setValues({ ...values, isNew: !isNew });
   };
 
+  const handleLocationClick = () => {
+    if (!navigator.geolocation) {
+      setErrors({ ...errors, location: "Geolocation is not supported by your browser" });
+      return;
+    }
+
+    setValues({ ...values, loading: true });
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setValues({
+          ...values,
+          lat: position.coords.latitude.toString(),
+          lon: position.coords.longitude.toString(),
+          loading: false,
+        });
+        setLocationSaved(true);
+        setTimeout(() => setLocationSaved(false), 3000); // Hide tick after 3 seconds
+      },
+      () => {
+        setErrors({ ...errors, location: "Unable to retrieve your location" });
+        setValues({ ...values, loading: false });
+      }
+    );
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -64,11 +91,11 @@ const Sell = () => {
     if (!title) newErrors.title = "Title is required";
     if (!category) newErrors.category = "Category is required";
     if (listingType === "sell" && !price) newErrors.price = "Price is required";
-    if (!location) newErrors.location = "Location is required";
     if (!address) newErrors.address = "Address is required";
     if (!contact) newErrors.contact = "Contact is required";
     if (!images.length) newErrors.images = "At least one image is required";
     if (listingType === "sell" && price < 0) newErrors.price = "Price cannot be negative";
+    if (!lat || !lon) newErrors.location = "Location is required";
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
@@ -94,7 +121,6 @@ const Sell = () => {
         title,
         category,
         price: listingType === "sell" ? price : 0,
-        location,
         address,
         contact,
         description,
@@ -104,6 +130,8 @@ const Sell = () => {
         adType: listingType,
         publishedAt: Timestamp.fromDate(new Date()),
         postedBy: auth.currentUser.uid,
+        lat,
+        lon,
       });
 
       await setDoc(
@@ -123,13 +151,14 @@ const Sell = () => {
         title: "",
         category: "",
         price: "",
-        location: "",
         address: "",
         contact: "",
         description: "",
         isNew: true,
         listingType: "",
         loading: false,
+        lat: "",
+        lon: "",
       });
       setImagePreviews([]);
       navigate("/");
@@ -287,20 +316,40 @@ const Sell = () => {
           {/* Location */}
           <motion.div className="col-md-6" whileHover={{ scale: 1.02 }}>
             <label className="form-label fw-bold" style={{ color: "#34495e" }}>Location {errors.location && <span className="text-danger">* {errors.location}</span>}</label>
-            <select
-              name="location"
-              className={`form-select shadow-sm ${errors.location ? "border-danger" : ""}`}
-              onChange={handleChange}
-              required
-              style={{ borderColor: "#bdc3c7" }}
-            >
-              <option value="">Select Location</option>
-              {locations.map((location) => (
-                <option value={location} key={location}>
-                  {location}
-                </option>
-              ))}
-            </select>
+            <div className="input-group">
+              <input
+                type="text"
+                className="form-control"
+                placeholder="Your location"
+                value={lat && lon ? `${lat}, ${lon}` : ""}
+                readOnly
+              />
+              <motion.button
+                type="button"
+                className="btn btn-outline-secondary"
+                onClick={handleLocationClick}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                disabled={loading}
+              >
+                <FaMapMarkerAlt className="me-2" />
+                {loading ? "Loading..." : (lat && lon) ? "Update" : "Get Location"}
+              </motion.button>
+            </div>
+            <AnimatePresence>
+              {locationSaved && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.3 }}
+                  className="text-success mt-2 d-flex align-items-center"
+                >
+                  <FaCheck className="me-2" />
+                  Location saved
+                </motion.div>
+              )}
+            </AnimatePresence>
           </motion.div>
 
           {/* Contact */}
