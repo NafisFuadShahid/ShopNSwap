@@ -1,6 +1,6 @@
 import { signOut } from "firebase/auth";
 import { doc, updateDoc, onSnapshot, collection, getDocs, query, where } from "firebase/firestore";
-import React, { useContext, useEffect, useState, useRef } from "react";
+import React, { useContext, useEffect, useState, useRef, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { AuthContext } from "../context/auth";
 import { auth, db } from "../firebaseConfig";
@@ -18,13 +18,14 @@ const MapPopup = ({ isOpen, onClose, userLocation, onLocationUpdate }) => {
   const [map, setMap] = useState(null);
   const [marker, setMarker] = useState(null);
 
-  const onLoad = React.useCallback(function callback(map) {
+  const onLoad = useCallback(function callback(map) {
     const bounds = new window.google.maps.LatLngBounds(userLocation);
     map.fitBounds(bounds);
     setMap(map);
+    setMarker(userLocation);
   }, [userLocation]);
 
-  const onUnmount = React.useCallback(function callback(map) {
+  const onUnmount = useCallback(function callback(map) {
     setMap(null);
   }, []);
 
@@ -41,43 +42,41 @@ const MapPopup = ({ isOpen, onClose, userLocation, onLocationUpdate }) => {
     }
   };
 
-  let markerRef = null;  // Reference to the marker
-
   const handleCurrentLocation = () => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
           const currentLocation = {
             lat: position.coords.latitude,
-            lng: position.coords.longitude
+            lng: position.coords.longitude,
           };
   
-          // Remove the old marker if it exists
-          if (markerRef) {
-            markerRef.setMap(null); // This removes the old marker
+          console.log("Current Location:", currentLocation);
+  
+          setMarker(currentLocation);
+          if (map) {
+            map.panTo(currentLocation);
+            map.setZoom(15);
           }
-  
-          // Set the new marker
-          markerRef = new google.maps.Marker({
-            position: currentLocation,
-            map: map
-          });
-  
-          setMarker(currentLocation);  // Update the marker state
-  
-          map.panTo(currentLocation);  // Recenter the map
-          map.setZoom(15);  // Zoom in
         },
         (error) => {
-          console.error("Error getting current location:", error);
-          alert("Unable to retrieve your location. Please try again.");
-        }
+          console.error("Error fetching geolocation:", error);
+          alert("Unable to fetch your location. Please try again.");
+        },
+        { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
       );
     } else {
-      alert("Geolocation is not supported by this browser.");
+      alert("Geolocation is not supported by your browser.");
     }
   };
-  
+
+  useEffect(() => {
+    if (isLoaded && map) {
+      const bounds = new window.google.maps.LatLngBounds(userLocation);
+      map.fitBounds(bounds);
+      setMarker(userLocation);
+    }
+  }, [isLoaded, map, userLocation]);
 
   if (!isOpen) return null;
 
@@ -95,7 +94,7 @@ const MapPopup = ({ isOpen, onClose, userLocation, onLocationUpdate }) => {
               onUnmount={onUnmount}
               onClick={handleMapClick}
             >
-              <Marker position={marker || userLocation} />
+              {marker && <Marker position={marker} />}
             </GoogleMap>
             <button
               onClick={handleCurrentLocation}
@@ -235,9 +234,6 @@ const Navbar = () => {
   const closeDropdown = () => {
     setDropdownOpen(false);
   };
-
-  // The user profile button (with the user's photo or a default user icon)
-  // opens a dropdown menu with various user-related options like profile, favorites, chat, and sign out.
 
   return (
     <nav className="bg-white shadow-md dark:bg-gray-800 transition-all duration-300">
