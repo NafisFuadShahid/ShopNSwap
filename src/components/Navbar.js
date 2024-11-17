@@ -4,9 +4,118 @@ import React, { useContext, useEffect, useState, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { AuthContext } from "../context/auth";
 import { auth, db } from "../firebaseConfig";
-import { FaUserAlt, FaSearch, FaHeart, FaComments, FaSignOutAlt, FaMapMarkerAlt } from "react-icons/fa";
+import { FaUserAlt, FaSearch, FaHeart, FaComments, FaSignOutAlt, FaMapMarkerAlt, FaCrosshairs } from "react-icons/fa";
 import { MdPostAdd } from "react-icons/md";
+import { GoogleMap, useJsApiLoader, Marker } from '@react-google-maps/api';
 import 'bootstrap/dist/css/bootstrap.min.css';
+
+const MapPopup = ({ isOpen, onClose, userLocation, onLocationUpdate }) => {
+  const { isLoaded } = useJsApiLoader({
+    id: 'google-map-script',
+    googleMapsApiKey: "AIzaSyAkUsqwZWtJN6Ezct2VeoD4T6GTIM4wm7M"
+  });
+
+  const [map, setMap] = useState(null);
+  const [marker, setMarker] = useState(null);
+
+  const onLoad = React.useCallback(function callback(map) {
+    const bounds = new window.google.maps.LatLngBounds(userLocation);
+    map.fitBounds(bounds);
+    setMap(map);
+  }, [userLocation]);
+
+  const onUnmount = React.useCallback(function callback(map) {
+    setMap(null);
+  }, []);
+
+  const handleMapClick = (event) => {
+    const lat = event.latLng.lat();
+    const lng = event.latLng.lng();
+    setMarker({ lat, lng });
+  };
+
+  const handleConfirm = () => {
+    if (marker) {
+      onLocationUpdate(marker.lat, marker.lng);
+      onClose();
+    }
+  };
+
+  let markerRef = null;  // Reference to the marker
+
+  const handleCurrentLocation = () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const currentLocation = {
+            lat: position.coords.latitude,
+            lng: position.coords.longitude
+          };
+  
+          // Remove the old marker if it exists
+          if (markerRef) {
+            markerRef.setMap(null); // This removes the old marker
+          }
+  
+          // Set the new marker
+          markerRef = new google.maps.Marker({
+            position: currentLocation,
+            map: map
+          });
+  
+          setMarker(currentLocation);  // Update the marker state
+  
+          map.panTo(currentLocation);  // Recenter the map
+          map.setZoom(15);  // Zoom in
+        },
+        (error) => {
+          console.error("Error getting current location:", error);
+          alert("Unable to retrieve your location. Please try again.");
+        }
+      );
+    } else {
+      alert("Geolocation is not supported by this browser.");
+    }
+  };
+  
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white p-4 rounded-lg shadow-lg w-[80vw] max-w-3xl">
+        <h2 className="text-xl font-bold mb-4">Update Your Location</h2>
+        {isLoaded ? (
+          <div className="relative">
+            <GoogleMap
+              mapContainerStyle={{ width: '100%', height: '400px' }}
+              center={userLocation}
+              zoom={10}
+              onLoad={onLoad}
+              onUnmount={onUnmount}
+              onClick={handleMapClick}
+            >
+              <Marker position={marker || userLocation} />
+            </GoogleMap>
+            <button
+              onClick={handleCurrentLocation}
+              className="absolute bottom-4 left-4 p-2 bg-white rounded-full shadow-md hover:bg-gray-100 transition-colors z-10"
+              title="Use current location"
+            >
+              <FaCrosshairs className="w-5 h-5 text-blue-600" />
+            </button>
+          </div>
+        ) : (
+          <div>Loading...</div>
+        )}
+        <div className="mt-4 flex justify-end space-x-2">
+          <button onClick={onClose} className="px-4 py-2 bg-gray-200 rounded">Cancel</button>
+          <button onClick={handleConfirm} className="px-4 py-2 bg-blue-500 text-white rounded">Confirm</button>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const Navbar = () => {
   const { user, unread } = useContext(AuthContext);
@@ -16,6 +125,8 @@ const Navbar = () => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
+  const [showMapPopup, setShowMapPopup] = useState(false);
+  const [userLocation, setUserLocation] = useState({ lat: 23.8103, lng: 90.4125 }); // Default to Dhaka, Bangladesh
   const dropdownRef = useRef(null);
   const searchRef = useRef(null);
 
@@ -27,6 +138,9 @@ const Navbar = () => {
           const userData = docSnapshot.data();
           setPhotoUrl(userData.photoUrl || null);
           setUserName(userData.name || user.displayName || "User");
+          if (userData.lat && userData.lon) {
+            setUserLocation({ lat: parseFloat(userData.lat), lng: parseFloat(userData.lon) });
+          }
         }
       });
       return () => unsubscribe();
@@ -57,36 +171,25 @@ const Navbar = () => {
     }
   };
 
-  const handleLocationClick = async () => {
+  const handleLocationClick = () => {
     if (!user) {
       alert("Please login to use location services");
       return;
     }
+    setShowMapPopup(true);
+  };
 
-    const success = async (position) => {
-      const latitude = position.coords.latitude.toString();
-      const longitude = position.coords.longitude.toString();
-      
-      try {
-        await updateDoc(doc(db, "users", user.uid), {
-          lat: latitude,
-          lon: longitude,
-        });
-        alert("Location updated successfully!");
-      } catch (error) {
-        console.error("Error updating location:", error);
-        alert("Failed to update location. Please try again.");
-      }
-    };
-
-    const error = () => {
-      alert("Unable to retrieve your location. Please make sure location services are enabled.");
-    };
-
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(success, error);
-    } else {
-      alert("Geolocation is not supported by this browser.");
+  const handleLocationUpdate = async (lat, lng) => {
+    try {
+      await updateDoc(doc(db, "users", user.uid), {
+        lat: lat.toString(),
+        lon: lng.toString(),
+      });
+      setUserLocation({ lat, lng });
+      alert("Location updated successfully!");
+    } catch (error) {
+      console.error("Error updating location:", error);
+      alert("Failed to update location. Please try again.");
     }
   };
 
@@ -132,6 +235,9 @@ const Navbar = () => {
   const closeDropdown = () => {
     setDropdownOpen(false);
   };
+
+  // The user profile button (with the user's photo or a default user icon)
+  // opens a dropdown menu with various user-related options like profile, favorites, chat, and sign out.
 
   return (
     <nav className="bg-white shadow-md dark:bg-gray-800 transition-all duration-300">
@@ -271,6 +377,12 @@ const Navbar = () => {
           </div>
         </div>
       </div>
+      <MapPopup
+        isOpen={showMapPopup}
+        onClose={() => setShowMapPopup(false)}
+        userLocation={userLocation}
+        onLocationUpdate={handleLocationUpdate}
+      />
     </nav>
   );
 };
