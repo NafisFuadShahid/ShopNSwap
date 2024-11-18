@@ -21,7 +21,7 @@ const categories = [
 const MapPopup = ({ isOpen, onClose, userLocation, onLocationUpdate }) => {
   const { isLoaded } = useJsApiLoader({
     id: 'google-map-script',
-    googleMapsApiKey: "AIzaSyAkUsqwZWtJN6Ezct2VeoD4T6GTIM4wm7M"
+    googleMapsApiKey: "AIzaSyDsjUXVb042Yemnow0qkw45haWyjikqTRw"
   });
 
   const [map, setMap] = useState(null);

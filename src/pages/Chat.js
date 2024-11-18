@@ -19,8 +19,8 @@ import MessageForm from "../components/MessageForm";
 import User from "../components/User";
 import Message from "../components/Message";
 
-const Chat = () => {
-  const [chat, setChat] = useState();
+export default function Chat() {
+  const [chat, setChat] = useState(null);
   const [text, setText] = useState("");
   const [users, setUsers] = useState([]);
   const [msgs, setMsgs] = useState([]);
@@ -82,19 +82,21 @@ const Chat = () => {
       const meDoc = await getDoc(meRef);
       const otherDoc = await getDoc(otherRef);
 
-      users.push({
-        ad: adDoc.data(),
-        me: meDoc.data(),
-        other: otherDoc.data(),
-      });
+      if (adDoc.exists() && meDoc.exists() && otherDoc.exists()) {
+        users.push({
+          ad: { ...adDoc.data(), adId: adDoc.id },
+          me: meDoc.data(),
+          other: otherDoc.data(),
+        });
 
-      const unsub = onSnapshot(otherRef, (doc) => {
-        setOnline((prev) => ({
-          ...prev,
-          [doc.data().uid]: doc.data().isOnline,
-        }));
-      });
-      unsubscribes.push(unsub);
+        const unsub = onSnapshot(otherRef, (doc) => {
+          setOnline((prev) => ({
+            ...prev,
+            [doc.data().uid]: doc.data().isOnline,
+          }));
+        });
+        unsubscribes.push(unsub);
+      }
     }
     setUsers(users);
 
@@ -112,6 +114,8 @@ const Chat = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (!chat || !text.trim()) return;
 
     const user2 = chat.other.uid;
     const chatId = user1 > user2
@@ -233,6 +237,4 @@ const Chat = () => {
       </div>
     </div>
   );
-};
-
-export default Chat;
+}
