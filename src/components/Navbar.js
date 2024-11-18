@@ -98,7 +98,7 @@ const MapPopup = ({ isOpen, onClose, userLocation, onLocationUpdate }) => {
             lat: position.coords.latitude,
             lng: position.coords.longitude,
           };
-          const locationString = await updateMarkerAndCenter(currentLocation);
+          await updateMarkerAndCenter(currentLocation);
           setIsLoading(false);
         },
         (error) => {
