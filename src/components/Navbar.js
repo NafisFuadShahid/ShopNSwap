@@ -332,16 +332,25 @@ const Navbar = () => {
       <div className="max-w-[95%] mx-auto px-4">
         <div className="flex justify-between items-center h-20">
           <div className="flex items-center space-x-8">
-            <Link to="/" className="flex-shrink-0 flex items-center">
-              <img
-                src="https://svgshare.com/i/1BQj.svg"
-                className="h-10 w-auto"
-                alt="Logo"
-              />
-              <span className="ml-2 text-2xl font-semibold text-gray-800 dark:text-white">
-                ShopNSwap
-              </span>
-            </Link>
+          <Link href="/" className="flex-shrink-0 flex items-center">
+      <svg
+        className="h-10 w-auto text-primary"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"
+        />
+      </svg>
+      <span className="ml-2 text-2xl font-semibold text-gray-800 dark:text-white">
+        ShopNSwap
+      </span>
+    </Link>
             <div className="hidden md:flex items-center space-x-1">
               <NavLink to="/buy">Buy</NavLink>
               <NavLink to="/swap">Swap</NavLink>
