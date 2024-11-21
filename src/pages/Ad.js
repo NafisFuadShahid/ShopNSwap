@@ -24,6 +24,8 @@ const Ad = () => {
   const [isAnimating, setIsAnimating] = useState(false);
   const [showBidDialog, setShowBidDialog] = useState(false);
   const [swapAds, setSwapAds] = useState([]);
+  const [showBidsDialog, setShowBidsDialog] = useState(false);
+  const [bids, setBids] = useState([]);
 
   const { val } = useSnapshot("favorites", id);
 
@@ -31,25 +33,31 @@ const Ad = () => {
     const docRef = doc(db, "ads", id);
     const docSnap = await getDoc(docRef);
     if (docSnap.exists()) {
-      setAd(docSnap.data());
+      setAd({ id: docSnap.id, ...docSnap.data() });
       const sellerRef = doc(db, "users", docSnap.data().postedBy);
       const sellerSnap = await getDoc(sellerRef);
       if (sellerSnap.exists()) {
-        setSeller(sellerSnap.data());
+        setSeller({ id: sellerSnap.id, ...sellerSnap.data() });
       }
     }
   };
 
   useEffect(() => {
     getAd();
-    setIsFavorite(val?.users?.includes(auth.currentUser?.uid) || false);
-  }, [val]);
+  }, [id]);
 
   useEffect(() => {
-    if (auth.currentUser) {
+    setIsFavorite(val?.users?.includes(auth.currentUser?.uid) || false);
+  }, [val, auth.currentUser]);
+
+  useEffect(() => {
+    if (auth.currentUser && ad) {
       fetchSwapAds();
+      if (ad.adType === "swap" && ad.postedBy === auth.currentUser.uid) {
+        fetchBids();
+      }
     }
-  }, [auth.currentUser]);
+  }, [auth.currentUser, ad]);
 
   const handleFavoriteClick = () => {
     toggleFavorite(val.users, id);
@@ -93,20 +101,17 @@ const Ad = () => {
 
   const bkashPaymentHandler = async () => {
     try {
-      await Axios.post('http://localhost:5000/bkash-checkout', {
+      const response = await Axios.post('http://localhost:5000/bkash-checkout', {
         amount: ad.price,
         callbackURL: 'http://localhost:5000/bkash-callback', 
         orderID: '1234',
         reference: '12345',
-      }).then((response) => {
-        console.log(response);
-        window.location.href = response?.data;
-      })
-      .catch((err) => {
-        console.log(err);
       });
+      console.log(response);
+      window.location.href = response?.data;
     } catch (error) {
       console.log(error);
+      toast.error("Payment initiation failed. Please try again.");
     }
   };
 
@@ -138,7 +143,33 @@ const Ad = () => {
     }
   };
 
-  return ad ? (
+  const fetchBids = async () => {
+    const q = query(collection(db, "bids"), where("originalAdId", "==", id));
+    const querySnapshot = await getDocs(q);
+    const fetchedBids = [];
+    for (const bidDoc of querySnapshot.docs) {
+      const bidData = bidDoc.data();
+      const swapAdSnap = await getDoc(doc(db, "ads", bidData.swapAdId));
+      const bidderSnap = await getDoc(doc(db, "users", bidData.bidder));
+      if (swapAdSnap.exists() && bidderSnap.exists()) {
+        fetchedBids.push({
+          id: bidDoc.id,
+          ...bidData,
+          swapAd: { id: swapAdSnap.id, ...swapAdSnap.data() },
+          bidder: { id: bidderSnap.id, ...bidderSnap.data() }
+        });
+      }
+    }
+    setBids(fetchedBids);
+  };
+
+  const handleViewBids = () => {
+    setShowBidsDialog(true);
+  };
+
+  if (!ad) return null;
+
+  return (
     <div className="container mx-auto px-4 py-8 max-w-6xl">
       <style jsx>{`
         .image-gallery {
@@ -272,6 +303,14 @@ const Ad = () => {
                 Bid for Swap
               </button>
             )}
+            {ad.adType === "swap" && ad.postedBy === auth.currentUser?.uid && (
+              <button
+                className="mt-4 bg-purple-500 hover:bg-purple-600 text-white py-2 px-4 rounded"
+                onClick={handleViewBids}
+              >
+                View Bids
+              </button>
+            )}
           </div>
         </div>
 
@@ -356,8 +395,44 @@ const Ad = () => {
           </div>
         </div>
       )}
+
+      {showBidsDialog && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+          <div className="bg-white p-6 rounded-lg max-w-3xl w-full">
+            <h2 className="text-2xl font-bold mb-4">Bids for Your Ad</h2>
+            <div className="space-y-4 max-h-96 overflow-y-auto">
+              {bids.map((bid) => (
+                <div key={bid.id} className="flex items-center justify-between p-4 border rounded">
+                  <div className="flex items-center space-x-4">
+                    <img src={bid.swapAd.images[0].url} alt={bid.swapAd.title} className="w-16 h-16 object-cover rounded" />
+                    <div>
+                      <h3 className="font-semibold">{bid.swapAd.title}</h3>
+                      <p className="text-sm text-gray-600">Bidder: {bid.bidder.name}</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => window.open(`/${bid.swapAd.category.toLowerCase()}/${bid.swapAdId}`, '_blank')}
+                    className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded"
+                  >
+                    View Ad
+                  </button>
+                </div>
+              ))}
+              {bids.length === 0 && (
+                <p className="text-center text-gray-600">No bids yet for this ad.</p>
+              )}
+            </div>
+            <button
+              className="mt-4 bg-gray-300 hover:bg-gray-400 text-gray-800 py-2 px-4 rounded"
+              onClick={() => setShowBidsDialog(false)}
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
     </div>
-  ) : null;
+  );
 };
 
 export default Ad;
