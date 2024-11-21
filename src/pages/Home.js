@@ -197,7 +197,7 @@ const Home = () => {
           cursor: pointer;
         }
         .category-card:hover {
-          background-color: #f0f9ff;
+          background-color: #e6f2ff;
           transform: translateY(-3px);
           box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
         }
@@ -232,6 +232,13 @@ const Home = () => {
           background-color: rgba(255, 255, 255, 0.2);
         }
         .selected-category svg {
+          color: white;
+        }
+        .selected-category:hover {
+          background-color: #2563eb;
+        }
+        .selected-category:hover .category-label,
+        .selected-category:hover svg {
           color: white;
         }
         .arrow {
@@ -400,3 +407,4 @@ const Home = () => {
 };
 
 export default Home;
+
