@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { deleteDoc, doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
+import { deleteDoc, doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs } from "firebase/firestore";
 import { auth, db, storage } from "../firebaseConfig";
 import { ref, deleteObject } from "firebase/storage";
 import { AiOutlineHeart, AiFillHeart, AiOutlineLeft, AiOutlineRight } from "react-icons/ai";
@@ -11,17 +11,19 @@ import useSnapshot from "../utils/useSnapshot";
 import { toggleFavorite } from "../utils/fav";
 import Sold from "../components/Sold";
 import Axios from "axios";
-import toast from "react-toastify";
+import { toast } from "react-toastify";
 
 const Ad = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [ad, setAd] = useState();
+  const [ad, setAd] = useState(null);
   const [idx, setIdx] = useState(0);
-  const [seller, setSeller] = useState();
+  const [seller, setSeller] = useState(null);
   const [showNumber, setShowNumber] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
+  const [showBidDialog, setShowBidDialog] = useState(false);
+  const [swapAds, setSwapAds] = useState([]);
 
   const { val } = useSnapshot("favorites", id);
 
@@ -42,6 +44,12 @@ const Ad = () => {
     getAd();
     setIsFavorite(val?.users?.includes(auth.currentUser?.uid) || false);
   }, [val]);
+
+  useEffect(() => {
+    if (auth.currentUser) {
+      fetchSwapAds();
+    }
+  }, [auth.currentUser]);
 
   const handleFavoriteClick = () => {
     toggleFavorite(val.users, id);
@@ -83,39 +91,50 @@ const Ad = () => {
     navigate("/chat", { state: { ad } });
   };
 
-  // // Function to handle bKash payment
-  // const bkashPaymentHandler = async () => {
-  //   try {
-  //     const result = await Axios.post("http://localhost:5000/api/bkash/create"); // Adjust URL as necessary
-
-  //     if (result?.data?.status) {
-  //       window.location.href = result?.data?.data?.data?.bkashURL;
-  //     } else {
-  //       toast.error("Something went wrong");
-  //     }
-  //   } catch (error) {
-  //     console.log(error);
-  //     toast.error("Payment failed. Please try again.");
-  //   }
-  // };
-
   const bkashPaymentHandler = async () => {
     try {
       await Axios.post('http://localhost:5000/bkash-checkout', {
-        amount: 1000, // your total product price here
+        amount: ad.price,
         callbackURL: 'http://localhost:5000/bkash-callback', 
-        orderID: '1234', // your generated order id
-        reference: '12345', // random or your order reference
+        orderID: '1234',
+        reference: '12345',
       }).then((response) => {
-        //check backend response
         console.log(response);
-        window.location.href = response?.data; // get url and redirect to Bkash pop up window
+        window.location.href = response?.data;
       })
       .catch((err) => {
         console.log(err);
       });
     } catch (error) {
       console.log(error);
+    }
+  };
+
+  const fetchSwapAds = async () => {
+    const q = query(collection(db, "ads"), where("adType", "==", "swap"), where("postedBy", "==", auth.currentUser.uid));
+    const querySnapshot = await getDocs(q);
+    const ads = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    setSwapAds(ads);
+  };
+
+  const handleBidClick = () => {
+    setShowBidDialog(true);
+  };
+
+  const handleSwapBid = async (swapAdId) => {
+    try {
+      await setDoc(doc(db, "bids", `${id}_${swapAdId}`), {
+        originalAdId: id,
+        swapAdId: swapAdId,
+        bidder: auth.currentUser.uid,
+        status: "pending",
+        createdAt: new Date()
+      });
+      toast.success("Bid placed successfully!");
+      setShowBidDialog(false);
+    } catch (error) {
+      console.error("Error placing bid: ", error);
+      toast.error("Failed to place bid. Please try again.");
     }
   };
 
@@ -245,6 +264,14 @@ const Ad = () => {
                 <FaTrashAlt className="mr-2" /> Delete Ad
               </button>
             )}
+            {ad.adType === "swap" && auth.currentUser && ad.postedBy !== auth.currentUser.uid && (
+              <button
+                className="mt-4 bg-purple-500 hover:bg-purple-600 text-white py-2 px-4 rounded"
+                onClick={handleBidClick}
+              >
+                Bid for Swap
+              </button>
+            )}
           </div>
         </div>
 
@@ -283,10 +310,10 @@ const Ad = () => {
                 )}
                 {ad.adType === "sell" && ad.postedBy !== auth.currentUser?.uid && (
                   <button
-                className="action-button bg-yellow-500 hover:bg-yellow-600 text-white py-3 px-4 rounded-lg flex items-center justify-center"
-                onClick={bkashPaymentHandler}
+                    className="action-button bg-yellow-500 hover:bg-yellow-600 text-white py-3 px-4 rounded-lg flex items-center justify-center"
+                    onClick={bkashPaymentHandler}
                   >
-                  Pay with bKash
+                    Pay with bKash
                   </button>
                 )}
               </div>
@@ -298,8 +325,40 @@ const Ad = () => {
           </div>
         </div>
       </div>
+
+      {showBidDialog && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+          <div className="bg-white p-6 rounded-lg max-w-md w-full">
+            <h2 className="text-2xl font-bold mb-4">Bid for Swap</h2>
+            <p className="mb-4">Select one of your swap ads to bid for this item.</p>
+            <div className="space-y-4">
+              {swapAds.map((swapAd) => (
+                <div key={swapAd.id} className="flex items-center justify-between p-2 border rounded">
+                  <div className="flex items-center space-x-2">
+                    <img src={swapAd.images[0].url} alt={swapAd.title} className="w-12 h-12 object-cover rounded" />
+                    <span>{swapAd.title}</span>
+                  </div>
+                  <button
+                    className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded"
+                    onClick={() => handleSwapBid(swapAd.id)}
+                  >
+                    Bid with this
+                  </button>
+                </div>
+              ))}
+            </div>
+            <button
+              className="mt-4 bg-gray-300 hover:bg-gray-400 text-gray-800 py-2 px-4 rounded"
+              onClick={() => setShowBidDialog(false)}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   ) : null;
 };
 
 export default Ad;
+
