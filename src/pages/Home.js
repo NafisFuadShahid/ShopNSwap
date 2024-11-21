@@ -45,6 +45,7 @@ const Home = () => {
 
   useEffect(() => {
     const fetchUserLocation = async () => {
+      if (!auth.currentUser) return;
       const userDoc = await getDocs(query(collection(db, "users"), where("uid", "==", auth.currentUser.uid)));
       if (!userDoc.empty) {
         const userData = userDoc.docs[0].data();
@@ -93,7 +94,7 @@ const Home = () => {
     const adDocs = await getDocs(q);
     let fetchedAds = { sell: [], swap: [], donate: [] };
     adDocs.forEach((doc) => {
-      const ad = doc.data();
+      const ad = { ...doc.data(), id: doc.id };
       if (fetchedAds[ad.adType]) {
         fetchedAds[ad.adType].push(ad);
       }
@@ -223,9 +224,14 @@ const Home = () => {
         }
         .selected-category {
           background-color: #3b82f6;
-          color: white;
         }
         .selected-category .category-label {
+          color: white;
+        }
+        .selected-category .category-image-container {
+          background-color: rgba(255, 255, 255, 0.2);
+        }
+        .selected-category svg {
           color: white;
         }
         .arrow {
@@ -368,9 +374,7 @@ const Home = () => {
           <h3 className="ad-type-title">{adType}</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
             {adList.map((ad) => (
-              <div key={ad.adId}>
-                <AdCard ad={ad} />
-              </div>
+              <AdCard key={ad.id} ad={ad} />
             ))}
           </div>
         </div>
