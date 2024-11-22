@@ -1,0 +1,66 @@
+/* Login.css */
+
+.login-container {
+    background: linear-gradient(135deg, rgba(238, 174, 202, 1) 0%, rgba(148, 187, 233, 1) 100%);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  
+  .login-form {
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+    padding: 30px;
+    width: 100%;
+    max-width: 400px;
+  }
+  
+  .form-label {
+    font-weight: 600;
+    margin-bottom: 10px;
+  }
+  
+  .form-control {
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    padding: 10px;
+    transition: border-color 0.3s;
+  }
+  
+  .form-control:focus {
+    border-color: #a855f7; /* A violet color for focus */
+    outline: none;
+    box-shadow: 0 0 5px rgba(168, 85, 247, 0.5);
+  }
+  
+  .login-button {
+    width: 100%;
+    padding: 10px;
+    background: linear-gradient(to right, #6a11cb, #2575fc);
+    color: white;
+    border: none;
+    border-radius: 5px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  
+  .login-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+  }
+  
+  .btn-outline-primary {
+    border: 1px solid #007bff;
+    color: #007bff;
+    border-radius: 5px;
+  }
+  
+  .btn-outline-primary:hover {
+    background: #007bff;
+    color: white;
+  }
+  
