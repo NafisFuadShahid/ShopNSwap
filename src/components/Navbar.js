@@ -13,7 +13,7 @@ const libraries = ["places"];
 
 const MapPopup = ({ isOpen, onClose, userLocation, onLocationUpdate }) => {
   const { isLoaded, loadError } = useLoadScript({
-    googleMapsApiKey: "AIzaSyDsjUXVb042Yemnow0qkw45haWyjikqTRw",
+    googleMapsApiKey: "AIzaSyAih9-dwM_G_gKQEuNwNPjGyP6tipZ15m8",
     libraries,
   });
 
@@ -42,7 +42,7 @@ const MapPopup = ({ isOpen, onClose, userLocation, onLocationUpdate }) => {
   const fetchRegionName = async (lat, lng) => {
     try {
       const response = await fetch(
-        `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=AIzaSyDsjUXVb042Yemnow0qkw45haWyjikqTRw`
+        `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=AIzaSyAih9-dwM_G_gKQEuNwNPjGyP6tipZ15m8`
       );
       const data = await response.json();
       
