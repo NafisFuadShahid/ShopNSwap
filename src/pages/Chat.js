@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import { useLocation, Link } from "react-router-dom";
 import {
   addDoc,
@@ -9,15 +9,17 @@ import {
   onSnapshot,
   orderBy,
   query,
-  Timestamp,
   updateDoc,
   where,
+  serverTimestamp,
 } from "firebase/firestore";
+import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { db, auth } from "../firebaseConfig";
-import { FaSearch, FaPaperPlane, FaUserCircle } from 'react-icons/fa';
+import { FaSearch, FaUserCircle, FaEllipsisV } from 'react-icons/fa';
 import MessageForm from "../components/MessageForm";
 import User from "../components/User";
 import Message from "../components/Message";
+import { debounce } from 'lodash';
 
 export default function Chat() {
   const [chat, setChat] = useState(null);
@@ -26,11 +28,23 @@ export default function Chat() {
   const [msgs, setMsgs] = useState([]);
   const [online, setOnline] = useState({});
   const [searchTerm, setSearchTerm] = useState("");
-
+  const [isTyping, setIsTyping] = useState(false);
+  const [lastSeen, setLastSeen] = useState({});
+  const [unreadCounts, setUnreadCounts] = useState({});
+  const [attachment, setAttachment] = useState(null);
+  
   const location = useLocation();
-  const user1 = auth.currentUser.uid;
+  const user1 = auth.currentUser?.uid;
+  const messagesEndRef = useRef(null);
+  const storage = getStorage();
 
-  const selectUser = async (user) => {
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(scrollToBottom, [msgs]);
+
+  const selectUser = useCallback(async (user) => {
     setChat(user);
     const user2 = user.other.uid;
     const id = user1 > user2
@@ -42,7 +56,10 @@ export default function Chat() {
 
     const unsub = onSnapshot(q, (querySnapshot) => {
       let msgs = [];
-      querySnapshot.forEach((doc) => msgs.push(doc.data()));
+      querySnapshot.forEach((doc) => {
+        const msgData = doc.data();
+        msgs.push({ ...msgData, id: doc.id });
+      });
       setMsgs(msgs);
     });
 
@@ -53,23 +70,30 @@ export default function Chat() {
           lastUnread: false,
         });
       }
+      setLastSeen(docSnap.data().lastSeen || {});
     }
 
-    return () => unsub();
-  };
+    await updateDoc(doc(db, "messages", id), {
+      [`unreadCount.${user1}`]: 0
+    });
 
-  const getChat = async (ad) => {
+    return () => unsub();
+  }, [user1]);
+
+  const getChat = useCallback(async (ad) => {
+    if (!user1) return;
     const buyer = await getDoc(doc(db, "users", user1));
     const seller = await getDoc(doc(db, "users", ad.postedBy));
     setChat({ ad, me: buyer.data(), other: seller.data() });
-  };
+  }, [user1]);
 
-  const getList = async () => {
+  const getList = useCallback(async () => {
+    if (!user1) return;
     const msgRef = collection(db, "messages");
     const q = query(msgRef, where("users", "array-contains", user1));
 
     const msgsSnap = await getDocs(q);
-    const messages = msgsSnap.docs.map((doc) => doc.data());
+    const messages = msgsSnap.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
 
     const users = [];
     const unsubscribes = [];
@@ -78,9 +102,11 @@ export default function Chat() {
       const meRef = doc(db, "users", message.users.find((id) => id === user1));
       const otherRef = doc(db, "users", message.users.find((id) => id !== user1));
 
-      const adDoc = await getDoc(adRef);
-      const meDoc = await getDoc(meRef);
-      const otherDoc = await getDoc(otherRef);
+      const [adDoc, meDoc, otherDoc] = await Promise.all([
+        getDoc(adRef),
+        getDoc(meRef),
+        getDoc(otherRef)
+      ]);
 
       if (adDoc.exists() && meDoc.exists() && otherDoc.exists()) {
         users.push({
@@ -89,10 +115,15 @@ export default function Chat() {
           other: otherDoc.data(),
         });
 
-        const unsub = onSnapshot(otherRef, (doc) => {
+        const unsub = onSnapshot(doc(db, "messages", message.id), (doc) => {
+          const data = doc.data();
           setOnline((prev) => ({
             ...prev,
-            [doc.data().uid]: doc.data().isOnline,
+            [otherDoc.id]: data.online?.[otherDoc.id] || false,
+          }));
+          setUnreadCounts((prev) => ({
+            ...prev,
+            [message.id]: data.unreadCount?.[user1] || 0,
           }));
         });
         unsubscribes.push(unsub);
@@ -103,37 +134,91 @@ export default function Chat() {
     return () => {
       unsubscribes.forEach((unsubscribe) => unsubscribe());
     };
-  };
+  }, [user1]);
 
   useEffect(() => {
-    if (location.state?.ad) {
-      getChat(location.state?.ad);
+    if (user1) {
+      if (location.state?.ad) {
+        getChat(location.state.ad);
+      }
+      getList();
     }
-    getList();
-  }, []);
+  }, [user1, location.state, getChat, getList]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!chat || !text.trim()) return;
+    if (!chat || (!text.trim() && !attachment) || !user1) return;
 
     const user2 = chat.other.uid;
     const chatId = user1 > user2
       ? `${user1}.${user2}.${chat.ad.adId}`
       : `${user2}.${user1}.${chat.ad.adId}`;
 
-    await addDoc(collection(db, "messages", chatId, "chat"), {
+    const newMsg = {
       text,
       sender: user1,
-      createdAt: Timestamp.fromDate(new Date()),
-    });
+      createdAt: serverTimestamp(),
+      status: 'sent'
+    };
+
+    if (attachment) {
+      newMsg.attachment = attachment;
+    }
+
+    await addDoc(collection(db, "messages", chatId, "chat"), newMsg);
 
     await updateDoc(doc(db, "messages", chatId), {
-      lastText: text,
+      lastText: text || "Attachment",
       lastSender: user1,
       lastUnread: true,
+      [`unreadCount.${user2}`]: (unreadCounts[chatId] || 0) + 1,
     });
+
+    const updatedLastSeen = { ...lastSeen, [user1]: serverTimestamp() };
+    await updateDoc(doc(db, "messages", chatId), { lastSeen: updatedLastSeen });
+    setLastSeen(updatedLastSeen);
+
     setText("");
+    setAttachment(null);
+    setIsTyping(false);
+  };
+
+  const handleTyping = useCallback((newText) => {
+    setText(newText);
+    setIsTyping(newText.length > 0);
+    debouncedTypingStatus(newText.length > 0);
+  }, []);
+
+  const debouncedTypingStatus = useCallback(
+    debounce((isTyping) => {
+      if (!chat || !user1) return;
+      const user2 = chat.other.uid;
+      const chatId = user1 > user2
+        ? `${user1}.${user2}.${chat.ad.adId}`
+        : `${user2}.${user1}.${chat.ad.adId}`;
+      updateDoc(doc(db, "messages", chatId), {
+        [`typing.${user1}`]: isTyping
+      });
+    }, 500),
+    [chat, user1]
+  );
+
+  const handleFileUpload = async (file) => {
+    if (!file) return;
+
+    try {
+      const storageRef = ref(storage, `chat_attachments/${Date.now()}_${file.name}`);
+      await uploadBytes(storageRef, file);
+      const downloadURL = await getDownloadURL(storageRef);
+      setAttachment({
+        name: file.name,
+        url: downloadURL,
+        type: file.type
+      });
+    } catch (error) {
+      console.error("Error uploading file: ", error);
+    }
   };
 
   const filteredUsers = users.filter(user => 
@@ -142,9 +227,8 @@ export default function Chat() {
   );
 
   return (
-    <div className="flex h-screen bg-gray-100">
-      {/* Users Section */}
-      <div className="w-1/4 bg-white border-r border-gray-300 flex flex-col">
+    <div className="flex flex-col md:flex-row h-screen bg-gray-100">
+      <div className="w-full md:w-1/4 bg-white border-r border-gray-300 flex flex-col">
         <div className="p-4 border-b border-gray-300">
           <div className="relative">
             <input
@@ -166,37 +250,86 @@ export default function Chat() {
               chat={chat}
               online={online}
               user1={user1}
+              unreadCount={unreadCounts[`${user1}.${user.other.uid}.${user.ad.adId}`] || 0}
             />
           ))}
         </div>
       </div>
 
-      {/* Conversation Section */}
       <div className="flex-1 flex flex-col">
         {chat ? (
           <>
             <div className="bg-white p-4 border-b border-gray-300 flex justify-between items-center">
-              <div>
-                <h2 className="text-xl font-semibold">{chat.other.name}</h2>
-                <p className="text-gray-600">{chat.ad.title}</p>
+              <div className="flex items-center">
+                {chat.other.photoURL || chat.other.profileImage ? (
+                  <img
+                    src={chat.other.photoURL || chat.other.profileImage}
+                    alt={chat.other.name}
+                    className="w-10 h-10 rounded-full mr-3 object-cover"
+                    onError={(e) => {
+                      e.target.onerror = null;
+                      e.target.src = "/default-avatar.png";
+                    }}
+                  />
+                ) : (
+                  <div className="w-10 h-10 rounded-full mr-3 bg-gray-200 flex items-center justify-center">
+                    <span className="text-lg font-semibold text-gray-600">
+                      {chat.other.name?.charAt(0).toUpperCase()}
+                    </span>
+                  </div>
+                )}
+                <div>
+                  <h2 className="text-xl font-semibold">{chat.other.name}</h2>
+                  <p className="text-sm text-gray-600">
+                    {online[chat.other.uid] ? (
+                      <span className="flex items-center">
+                        <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                        Online
+                      </span>
+                    ) : (
+                      <span className="flex items-center">
+                        <span className="w-2 h-2 bg-gray-400 rounded-full mr-2"></span>
+                        Offline
+                      </span>
+                    )}
+                  </p>
+                </div>
               </div>
-              <Link
-                to={`/${chat.ad.category.toLowerCase()}/${chat.ad.adId}`}
-                className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition duration-200"
-              >
-                View Ad
-              </Link>
+              <div className="flex items-center">
+                <Link
+                  to={`/${chat.ad.category.toLowerCase()}/${chat.ad.adId}`}
+                  className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition duration-200 mr-2"
+                >
+                  View Ad
+                </Link>
+                <button className="text-gray-600 hover:text-gray-800">
+                  <FaEllipsisV />
+                </button>
+              </div>
             </div>
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
               {msgs.map((msg, i) => (
-                <Message key={i} msg={msg} user1={user1} />
+                <Message 
+                  key={i} 
+                  msg={msg} 
+                  user1={user1}
+                  lastSeen={lastSeen[chat.other.uid]}
+                />
               ))}
+              {attachment && (
+                <div className="bg-gray-200 p-2 rounded">
+                  <p>Attachment: {attachment.name}</p>
+                </div>
+              )}
+              <div ref={messagesEndRef} />
             </div>
             <div className="sticky bottom-0 bg-white p-4 border-t border-gray-300">
               <MessageForm
                 text={text}
-                setText={setText}
+                setText={handleTyping}
                 handleSubmit={handleSubmit}
+                isTyping={isTyping}
+                handleFileUpload={handleFileUpload}
               />
             </div>
           </>
@@ -207,8 +340,7 @@ export default function Chat() {
         )}
       </div>
 
-      {/* User Profile Section */}
-      <div className="w-1/4 bg-white border-l border-gray-300 overflow-y-auto">
+      <div className="hidden md:block w-1/4 bg-white border-l border-gray-300 overflow-y-auto">
         {chat && (
           <div className="p-4">
             <div className="flex flex-col items-center mb-4">
@@ -216,7 +348,11 @@ export default function Chat() {
                 <img 
                   src={chat.ad.images[0].url} 
                   alt={chat.ad.title}
-                  className="w-full h-48 object-cover mb-2 rounded" 
+                  className="w-full h-48 object-cover mb-2 rounded"
+                  onError={(e) => {
+                    e.target.onerror = null;
+                    e.target.src = "/placeholder.svg";
+                  }}
                 />
               ) : (
                 <div className="w-full h-48 bg-gray-200 flex items-center justify-center mb-2 rounded">
