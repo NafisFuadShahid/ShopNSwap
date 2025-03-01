@@ -1,6 +1,6 @@
-import React, { useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { auth, db } from "../../firebaseConfig";
-import { signInWithEmailAndPassword } from "firebase/auth";
+import { signInWithEmailAndPassword, applyActionCode } from "firebase/auth";
 import { doc, updateDoc } from "firebase/firestore";
 import { useNavigate, Link, useLocation } from "react-router-dom";
 import { FaEnvelope, FaLock } from "react-icons/fa";
@@ -11,12 +11,47 @@ export default function Component() {
     password: "",
     error: "",
     loading: false,
+    verificationSuccess: false,
   });
 
   const navigate = useNavigate();
   const location = useLocation();
+  const verificationProcessed = useRef(false);
 
-  const { email, password, error, loading } = values;
+  const { email, password, error, loading, verificationSuccess } = values;
+
+  // verification process using mode and oobCode
+  useEffect(() => {
+    // Parse query parameter
+    const queryParams = new URLSearchParams(location.search);
+    const mode = queryParams.get("mode");
+    const oobCode = queryParams.get("oobCode");
+
+    // handle email verification - only process once
+    if (mode === "verifyEmail" && oobCode && !verificationProcessed.current) {
+      verificationProcessed.current = true; // Mark as processed immediately
+      
+      (async () => {
+        try {
+          await applyActionCode(auth, oobCode);
+          setValues(prev => ({
+            ...prev,
+            verificationSuccess: true,
+            error: ""
+          }));
+        } catch (error) {
+          // Reset the verification processed flag if there was an error
+          // This allows retrying if the error was transient
+          verificationProcessed.current = false;
+          
+          setValues(prev => ({
+            ...prev,
+            error: "Email verification failed: " + error.message
+          }));
+        }
+      })();
+    }
+  }, [location]);
 
   const handleChange = (e) =>
     setValues({ ...values, [e.target.name]: e.target.value });
@@ -33,6 +68,15 @@ export default function Component() {
 
     try {
       const result = await signInWithEmailAndPassword(auth, email, password);
+
+      if (!result.user.emailVerified) {
+        setValues({
+          ...values,
+          error: "Please verify your email before logging in.",
+          loading: false,
+        });
+        return;
+      }
 
       await updateDoc(doc(db, "users", result.user.uid), {
         isOnline: true,
@@ -61,6 +105,13 @@ export default function Component() {
         <h2 className="text-3xl font-bold text-center text-purple-800 mb-6">
           Log Into Your Account
         </h2>
+
+        {verificationSuccess && (
+          <div className="mb-4 p-3 text-green-700 bg-green-100 rounded">
+            Email verified successfully! You can now log in.
+          </div>
+        )}
+
         {error && (
           <div className="mb-4 p-3 text-red-700 bg-red-100 rounded">
             {error}
