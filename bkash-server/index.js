@@ -1,3 +1,4 @@
+// to run the server run node index.js
 import express from 'express';
 import cors from 'cors';
 import bodyParser from 'body-parser';

@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { auth, db } from "../../firebaseConfig";
-import { createUserWithEmailAndPassword } from "firebase/auth";
+import { createUserWithEmailAndPassword, sendEmailVerification } from "firebase/auth";
 import { setDoc, doc, Timestamp } from "firebase/firestore";
 import { useNavigate, Link } from "react-router-dom";
 import { FaUser, FaEnvelope, FaLock } from "react-icons/fa";
@@ -51,6 +51,8 @@ export default function Component() {
         isOnline: true,
       });
 
+      await sendEmailVerification(result.user);
+
       setValues({
         name: "",
         email: "",
@@ -60,7 +62,7 @@ export default function Component() {
         loading: false,
       });
 
-      navigate("/", { replace: true });
+      navigate("/auth/login", { replace: true });
     } catch (error) {
       setValues({ ...values, error: error.message, loading: false });
     }
