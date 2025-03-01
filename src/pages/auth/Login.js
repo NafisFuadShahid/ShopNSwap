@@ -3,9 +3,9 @@ import { auth, db } from "../../firebaseConfig";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { doc, updateDoc } from "firebase/firestore";
 import { useNavigate, Link, useLocation } from "react-router-dom";
-import './Login.css'; // Make sure to create a separate CSS file for styles
+import { FaEnvelope, FaLock } from "react-icons/fa";
 
-const Login = () => {
+export default function Component() {
   const [values, setValues] = useState({
     email: "",
     password: "",
@@ -56,57 +56,70 @@ const Login = () => {
   };
 
   return (
-    <div className="login-container">
-      <form className="login-form" onSubmit={handleSubmit}>
-        <h3 className="text-center mb-4">Log Into Your Account</h3>
-        <div className="mb-3">
-          <label htmlFor="email" className="form-label">
-            Email
-          </label>
-          <input
-            type="email"
-            className="form-control"
-            name="email"
-            value={email}
-            onChange={handleChange}
-            required
-          />
-        </div>
-        <div className="mb-3">
-          <label htmlFor="password" className="form-label">
-            Password
-          </label>
-          <input
-            type="password"
-            className="form-control"
-            name="password"
-            value={password}
-            onChange={handleChange}
-            required
-          />
-        </div>
-        {error && <p className="text-center text-danger">{error}</p>}
-
-        <div className="text-center mb-3">
+    <div className="min-h-screen bg-purple-50 bg-opacity-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-lg shadow-lg border border-purple-100 p-8 max-w-md w-full">
+        <h2 className="text-3xl font-bold text-center text-purple-800 mb-6">
+          Log Into Your Account
+        </h2>
+        {error && (
+          <div className="mb-4 p-3 text-red-700 bg-red-100 rounded">
+            {error}
+          </div>
+        )}
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="relative">
+            <FaEnvelope className="absolute left-3 top-1/2 transform -translate-y-1/2 text-purple-400" />
+            <input
+              type="email"
+              id="email"
+              name="email"
+              value={email}
+              onChange={handleChange}
+              placeholder="Email Address"
+              required
+              className="w-full pl-10 pr-4 py-2 border border-purple-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 transition"
+            />
+          </div>
+          <div className="relative">
+            <FaLock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-purple-400" />
+            <input
+              type="password"
+              id="password"
+              name="password"
+              value={password}
+              onChange={handleChange}
+              placeholder="Password"
+              required
+              className="w-full pl-10 pr-4 py-2 border border-purple-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 transition"
+            />
+          </div>
           <button
-            className="login-button"
+            type="submit"
             disabled={loading}
+            className="w-full py-2 bg-purple-600 text-white font-semibold rounded-lg shadow-md hover:bg-purple-700 focus:outline-none focus:ring-4 focus:ring-purple-300 transition transform hover:scale-105"
           >
             {loading ? "Loading..." : "Login"}
           </button>
+        </form>
+        <div className="mt-6 space-y-4">
+          <div className="text-center">
+            <Link
+              to="/auth/register"
+              className="inline-block w-full py-2 px-4 border border-purple-600 rounded-lg text-sm font-medium text-purple-600 hover:bg-purple-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition"
+            >
+              Create an Account
+            </Link>
+          </div>
+          <div className="text-center">
+            <Link
+              to="/auth/forgot-password"
+              className="text-sm text-purple-600 hover:text-purple-800 hover:underline"
+            >
+              Forgot Password?
+            </Link>
+          </div>
         </div>
-
-        <div className=" text-center mb-3">
-          <Link className="btn btn-outline-primary" to="/auth/register">
-            Register
-          </Link>
-          <small className="mt-10 text-center">
-            <Link to="/auth/forgot-password">Forgot Password?</Link>
-          </small>
-        </div>
-      </form>
+      </div>
     </div>
   );
-};
-
-export default Login;
+}

@@ -16,7 +16,7 @@ import {
   uploadBytes,
 } from "firebase/storage";
 import { db, storage, auth } from "../firebaseConfig";
-import { FaUserAlt, FaCloudUploadAlt } from "react-icons/fa";
+import { FaUserAlt, FaCloudUploadAlt, FaEdit, FaTrash } from "react-icons/fa";
 import moment from "moment";
 import AdCard from "../components/AdCard";
 import useSnapshot from "../utils/useSnapshot";
@@ -29,11 +29,11 @@ const Profile = () => {
   const [img, setImg] = useState("");
   const [ads, setAds] = useState([]);
   const [newName, setNewName] = useState("");
-  const [previewImg, setPreviewImg] = useState(""); // Preview before upload
+  const [previewImg, setPreviewImg] = useState("");
+  const [isEditing, setIsEditing] = useState(false);
 
   const { val: user } = useSnapshot("users", id);
 
-  // Upload user image
   const uploadImage = async () => {
     if (!img) return;
     const imgRef = ref(storage, `profile/${Date.now()} - ${img.name}`);
@@ -47,10 +47,9 @@ const Profile = () => {
       photoPath: result.ref.fullPath,
     });
     setImg("");
-    setPreviewImg(""); // Reset the preview
+    setPreviewImg("");
   };
 
-  // Fetch user ads
   const getAds = async () => {
     const adsRef = collection(db, "ads");
     const q = query(
@@ -59,17 +58,13 @@ const Profile = () => {
       orderBy("publishedAt", "desc")
     );
     const docs = await getDocs(q);
-    const adsList = [];
-    docs.forEach((doc) => {
-      adsList.push({ ...doc.data(), id: doc.id });
-    });
+    const adsList = docs.docs.map(doc => ({ ...doc.data(), id: doc.id }));
     setAds(adsList);
   };
 
-  // Handle image upload and deletion
   const deletePhoto = async () => {
     if (!user.photoPath) return;
-  
+
     const confirm = window.confirm("Delete photo permanently?");
     if (confirm) {
       try {
@@ -85,7 +80,6 @@ const Profile = () => {
     }
   };
 
-  // Handle name update
   const updateName = async () => {
     if (newName.trim() === "") {
       alert("Name cannot be empty.");
@@ -95,15 +89,15 @@ const Profile = () => {
     await updateDoc(doc(db, "users", auth.currentUser.uid), {
       name: newName,
     });
-    setNewName(""); // Clear the input after updating
+    setNewName("");
+    setIsEditing(false);
   };
 
-  // Image preview handler
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
       setImg(file);
-      setPreviewImg(URL.createObjectURL(file)); // Preview image before uploading
+      setPreviewImg(URL.createObjectURL(file));
     }
   };
 
@@ -115,103 +109,96 @@ const Profile = () => {
   }, [img]);
 
   return user ? (
-    <div className="container mt-5">
-      <div className="row justify-content-center">
-        <div className="col-md-6 text-center">
-          <div className="profile-card  p-4 rounded">
-            <div className="profile-image mx-auto w-40 mb-3">
-              {previewImg ? (
-                <img
-                  src={previewImg}
-                  alt="Preview"
-                  className="rounded-circle"
-                  style={{
-                    width: "150px",
-                    height: "150px",
-                    objectFit: "cover",
-                    border: "2px solid #007bff",
-                  }}
-                />
-              ) : user.photoUrl ? (
-                <img
-                  src={user.photoUrl}
-                  alt={user.name}
-                  className="rounded-circle"
-                  style={{
-                    width: "150px",
-                    height: "150px",
-                    objectFit: "cover",
-                    border: "2px solid #007bff",
-                  }}
-                />
-              ) : (
-                <FaUserAlt size={80} className="text-secondary" />
-              )}
-            </div>
-            <h3 className="fw-bold">{user.name}</h3>
-            <p className="text-muted">
-              Member since {monthAndYear(user.createdAt.toDate())}
-            </p>
-
-            <div className="dropdown my-3">
-              <button
-                className="btn btn-outline-primary btn-sm dropdown-toggle"
-                type="button"
-                data-bs-toggle="dropdown"
-                aria-expanded="false"
-              >
-                Edit Profile
-              </button>
-              <ul className="dropdown-menu">
-                <li>
-                  <label htmlFor="photo" className="dropdown-item">
-                    <FaCloudUploadAlt size={20} /> Upload Photo
+    <div className="container mx-auto px-4 py-8">
+      <div className="max-w-5xl mx-auto">
+        <div className="bg-white shadow-lg rounded-lg overflow-hidden mb-8">
+          <div className="p-6 sm:p-10">
+            <div className="flex flex-col sm:flex-row items-center sm:items-start">
+              <div className="mb-6 sm:mb-0 sm:mr-10">
+                <div className="relative">
+                  {previewImg || user.photoUrl ? (
+                    <img
+                      src={previewImg || user.photoUrl}
+                      alt={user.name}
+                      className="w-48 h-48 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-48 h-48 rounded-full bg-gray-200 flex items-center justify-center">
+                      <FaUserAlt size={72} className="text-gray-400" />
+                    </div>
+                  )}
+                  <label htmlFor="photo" className="absolute bottom-2 right-2 bg-blue-500 text-white rounded-full p-3 cursor-pointer hover:bg-blue-600 transition duration-300">
+                    <FaCloudUploadAlt size={24} />
                   </label>
                   <input
                     type="file"
                     id="photo"
                     accept="image/*"
-                    style={{ display: "none" }}
+                    className="hidden"
                     onChange={handleImageChange}
                   />
-                </li>
-                {user.photoUrl && (
-                  <li className="dropdown-item text-danger" onClick={deletePhoto}>
-                    Remove Photo
-                  </li>
+                </div>
+              </div>
+              <div className="text-center sm:text-left flex-grow">
+                {isEditing ? (
+                  <div className="mb-4">
+                    <input
+                      type="text"
+                      value={newName}
+                      onChange={(e) => setNewName(e.target.value)}
+                      placeholder="New name"
+                      className="w-full px-4 py-2 text-xl border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    <div className="mt-4 flex justify-end space-x-3">
+                      <button
+                        onClick={updateName}
+                        className="px-6 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition duration-300"
+                      >
+                        Save
+                      </button>
+                      <button
+                        onClick={() => setIsEditing(false)}
+                        className="px-6 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition duration-300"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <h2 className="text-4xl font-bold mb-4">
+                    {user.name}
+                    <button
+                      onClick={() => setIsEditing(true)}
+                      className="ml-3 text-blue-500 hover:text-blue-600"
+                    >
+                      <FaEdit size={24} />
+                    </button>
+                  </h2>
                 )}
-                <li>
-                  <input
-                    type="text"
-                    value={newName}
-                    onChange={(e) => setNewName(e.target.value)}
-                    placeholder="New name"
-                    className="form-control my-2"
-                  />
+                <p className="text-xl text-gray-600 mb-6">
+                  Member since {monthAndYear(user.createdAt.toDate())}
+                </p>
+                {user.photoUrl && (
                   <button
-                    className="btn btn-outline-primary btn-sm"
-                    onClick={updateName}
+                    onClick={deletePhoto}
+                    className="text-red-500 hover:text-red-600 transition duration-300 text-lg"
                   >
-                    Update Name
+                    <FaTrash size={20} className="mr-2 inline-block" />
+                    Remove Photo
                   </button>
-                </li>
-              </ul>
+                )}
+              </div>
             </div>
           </div>
         </div>
-        <div className="col-md-8 mt-4 text-start">
-       
-          <hr />
-          {ads.length ? (
-            <h4 className="fw-bold m-10 text-2xl">Products</h4>
-          ) : (
-            <h4>There are no ads published by this user</h4>
-          )}
-          <div className="row">
+
+        <div className="mt-12">
+          <h3 className="text-3xl font-bold mb-8">
+            {ads.length ? "Products" : "No products listed yet"}
+          </h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
             {ads.map((ad) => (
-              <div key={ad.id} className="col-sm-6 col-md-5 mb-3">
-                <AdCard ad={ad} />
-              </div>
+              <AdCard key={ad.id} ad={ad} />
             ))}
           </div>
         </div>
