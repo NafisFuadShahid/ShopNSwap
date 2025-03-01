@@ -1,17 +1,42 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { deleteDoc, doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs } from "firebase/firestore";
+import {
+  deleteDoc,
+  doc,
+  getDoc,
+  setDoc,
+  updateDoc,
+  collection,
+  query,
+  where,
+  getDocs,
+  addDoc,
+} from "firebase/firestore";
 import { auth, db, storage } from "../firebaseConfig";
 import { ref, deleteObject } from "firebase/storage";
-import { AiOutlineHeart, AiFillHeart, AiOutlineLeft, AiOutlineRight } from "react-icons/ai";
-import { FaTrashAlt, FaUserCircle, FaPhoneAlt, FaComments } from "react-icons/fa";
+import {
+  AiOutlineHeart,
+  AiFillHeart,
+  AiOutlineLeft,
+  AiOutlineRight,
+} from "react-icons/ai";
+import {
+  FaTrashAlt,
+  FaUserCircle,
+  FaPhoneAlt,
+  FaComments,
+  FaTrash,
+} from "react-icons/fa";
 import { FiPhoneCall } from "react-icons/fi";
 import Moment from "react-moment";
+import Axios from "axios";
+import { toast } from "react-toastify";
+
+// Custom hooks / components
 import useSnapshot from "../utils/useSnapshot";
 import { toggleFavorite } from "../utils/fav";
 import Sold from "../components/Sold";
-import Axios from "axios";
-import { toast } from "react-toastify";
+import ReviewSection from "../components/ReviewSection"; // <--- IMPORT YOUR REVIEW COMPONENT HERE
 
 const Ad = () => {
   const { id } = useParams();
@@ -22,23 +47,33 @@ const Ad = () => {
   const [showNumber, setShowNumber] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
+
+  // For swap
   const [showBidDialog, setShowBidDialog] = useState(false);
   const [swapAds, setSwapAds] = useState([]);
   const [showBidsDialog, setShowBidsDialog] = useState(false);
   const [bids, setBids] = useState([]);
 
+  // Favorites snapshot for this ad
   const { val } = useSnapshot("favorites", id);
 
+  // =====================
+  //     FETCH THE AD
+  // =====================
   const getAd = async () => {
-    const docRef = doc(db, "ads", id);
-    const docSnap = await getDoc(docRef);
-    if (docSnap.exists()) {
-      setAd({ id: docSnap.id, ...docSnap.data() });
-      const sellerRef = doc(db, "users", docSnap.data().postedBy);
-      const sellerSnap = await getDoc(sellerRef);
-      if (sellerSnap.exists()) {
-        setSeller({ id: sellerSnap.id, ...sellerSnap.data() });
+    try {
+      const docRef = doc(db, "ads", id);
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        setAd({ id: docSnap.id, ...docSnap.data() });
+        const sellerRef = doc(db, "users", docSnap.data().postedBy);
+        const sellerSnap = await getDoc(sellerRef);
+        if (sellerSnap.exists()) {
+          setSeller({ id: sellerSnap.id, ...sellerSnap.data() });
+        }
       }
+    } catch (error) {
+      console.error("Error fetching ad:", error);
     }
   };
 
@@ -46,10 +81,23 @@ const Ad = () => {
     getAd();
   }, [id]);
 
+  // =====================
+  //   FAVORITE LOGIC
+  // =====================
   useEffect(() => {
     setIsFavorite(val?.users?.includes(auth.currentUser?.uid) || false);
-  }, [val, auth.currentUser]);
+  }, [val]);
 
+  const handleFavoriteClick = () => {
+    toggleFavorite(val.users, id);
+    setIsFavorite(!isFavorite);
+    setIsAnimating(true);
+    setTimeout(() => setIsAnimating(false), 300);
+  };
+
+  // =====================
+  //   SWAP ADS / BIDS
+  // =====================
   useEffect(() => {
     if (auth.currentUser && ad) {
       fetchSwapAds();
@@ -59,66 +107,17 @@ const Ad = () => {
     }
   }, [auth.currentUser, ad]);
 
-  const handleFavoriteClick = () => {
-    toggleFavorite(val.users, id);
-    setIsFavorite(!isFavorite);
-    setIsAnimating(true);
-    setTimeout(() => setIsAnimating(false), 300);
-  };
-
-  const deleteAd = async () => {
-    const confirm = window.confirm(`Delete ${ad.title}?`);
-    if (confirm) {
-      for (const image of ad.images) {
-        const imgRef = ref(storage, image.path);
-        await deleteObject(imgRef);
-      }
-      await deleteDoc(doc(db, "favorites", id));
-      await deleteDoc(doc(db, "ads", id));
-      navigate(`/profile/${auth.currentUser.uid}`);
-    }
-  };
-
-  const updateStatus = async () => {
-    await updateDoc(doc(db, "ads", id), { isSold: true });
-    getAd();
-  };
-
-  const createChatroom = async () => {
-    const loggedInUser = auth.currentUser.uid;
-    const chatId =
-      loggedInUser > ad.postedBy
-        ? `${loggedInUser}.${ad.postedBy}.${id}`
-        : `${ad.postedBy}.${loggedInUser}.${id}`;
-    
-    await setDoc(doc(db, "messages", chatId), {
-      ad: id,
-      users: [loggedInUser, ad.postedBy],
-    });
-
-    navigate("/chat", { state: { ad } });
-  };
-
-  const bkashPaymentHandler = async () => {
-    try {
-      const response = await Axios.post('http://localhost:5000/bkash-checkout', {
-        amount: ad.price,
-        callbackURL: 'http://localhost:5000/bkash-callback', 
-        orderID: '1234',
-        reference: '12345',
-      });
-      console.log(response);
-      window.location.href = response?.data;
-    } catch (error) {
-      console.log(error);
-      toast.error("Payment initiation failed. Please try again.");
-    }
-  };
-
   const fetchSwapAds = async () => {
-    const q = query(collection(db, "ads"), where("adType", "==", "swap"), where("postedBy", "==", auth.currentUser.uid));
+    const q = query(
+      collection(db, "ads"),
+      where("adType", "==", "swap"),
+      where("postedBy", "==", auth.currentUser.uid)
+    );
     const querySnapshot = await getDocs(q);
-    const ads = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    const ads = querySnapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
     setSwapAds(ads);
   };
 
@@ -133,7 +132,7 @@ const Ad = () => {
         swapAdId: swapAdId,
         bidder: auth.currentUser.uid,
         status: "pending",
-        createdAt: new Date()
+        createdAt: new Date(),
       });
       toast.success("Bid placed successfully!");
       setShowBidDialog(false);
@@ -144,27 +143,100 @@ const Ad = () => {
   };
 
   const fetchBids = async () => {
-    const q = query(collection(db, "bids"), where("originalAdId", "==", id));
-    const querySnapshot = await getDocs(q);
-    const fetchedBids = [];
-    for (const bidDoc of querySnapshot.docs) {
-      const bidData = bidDoc.data();
-      const swapAdSnap = await getDoc(doc(db, "ads", bidData.swapAdId));
-      const bidderSnap = await getDoc(doc(db, "users", bidData.bidder));
-      if (swapAdSnap.exists() && bidderSnap.exists()) {
-        fetchedBids.push({
-          id: bidDoc.id,
-          ...bidData,
-          swapAd: { id: swapAdSnap.id, ...swapAdSnap.data() },
-          bidder: { id: bidderSnap.id, ...bidderSnap.data() }
-        });
+    try {
+      const q = query(collection(db, "bids"), where("originalAdId", "==", id));
+      const querySnapshot = await getDocs(q);
+      const fetchedBids = [];
+      for (const bidDoc of querySnapshot.docs) {
+        const bidData = bidDoc.data();
+        const swapAdSnap = await getDoc(doc(db, "ads", bidData.swapAdId));
+        const bidderSnap = await getDoc(doc(db, "users", bidData.bidder));
+        if (swapAdSnap.exists() && bidderSnap.exists()) {
+          fetchedBids.push({
+            id: bidDoc.id,
+            ...bidData,
+            swapAd: { id: swapAdSnap.id, ...swapAdSnap.data() },
+            bidder: { id: bidderSnap.id, ...bidderSnap.data() },
+          });
+        }
       }
+      setBids(fetchedBids);
+    } catch (error) {
+      console.error("Error fetching bids:", error);
     }
-    setBids(fetchedBids);
   };
 
   const handleViewBids = () => {
     setShowBidsDialog(true);
+  };
+
+  // =====================
+  //     DELETE AD
+  // =====================
+  const deleteAd = async () => {
+    const confirmDel = window.confirm(`Delete ${ad.title}?`);
+    if (confirmDel) {
+      try {
+        // Delete images from storage
+        for (const image of ad.images) {
+          const imgRef = ref(storage, image.path);
+          await deleteObject(imgRef);
+        }
+        // Delete from favorites
+        await deleteDoc(doc(db, "favorites", id));
+        // Delete the ad
+        await deleteDoc(doc(db, "ads", id));
+        navigate(`/profile/${auth.currentUser.uid}`);
+      } catch (error) {
+        console.error("Error deleting ad:", error);
+        toast.error("Failed to delete ad");
+      }
+    }
+  };
+
+  // =====================
+  //     MARK SOLD
+  // =====================
+  const updateStatus = async () => {
+    await updateDoc(doc(db, "ads", id), { isSold: true });
+    getAd();
+  };
+
+  // =====================
+  //     CHAT ROOM
+  // =====================
+  const createChatroom = async () => {
+    const loggedInUser = auth.currentUser.uid;
+    const chatId =
+      loggedInUser > ad.postedBy
+        ? `${loggedInUser}.${ad.postedBy}.${id}`
+        : `${ad.postedBy}.${loggedInUser}.${id}`;
+
+    await setDoc(doc(db, "messages", chatId), {
+      ad: id,
+      users: [loggedInUser, ad.postedBy],
+    });
+
+    navigate("/chat", { state: { ad } });
+  };
+
+  // =====================
+  //     PAYMENT
+  // =====================
+  const bkashPaymentHandler = async () => {
+    try {
+      const response = await Axios.post("http://localhost:5000/bkash-checkout", {
+        amount: ad.price,
+        callbackURL: "http://localhost:5000/bkash-callback",
+        orderID: "1234",
+        reference: "12345",
+      });
+      console.log(response);
+      window.location.href = response?.data;
+    } catch (error) {
+      console.log(error);
+      toast.error("Payment initiation failed. Please try again.");
+    }
   };
 
   if (!ad) return null;
@@ -234,9 +306,15 @@ const Ad = () => {
           animation: heartBeat 0.3s ease-in-out;
         }
         @keyframes heartBeat {
-          0% { transform: scale(1); }
-          50% { transform: scale(1.3); }
-          100% { transform: scale(1); }
+          0% {
+            transform: scale(1);
+          }
+          50% {
+            transform: scale(1.3);
+          }
+          100% {
+            transform: scale(1);
+          }
         }
         .action-button {
           transition: all 0.3s ease;
@@ -246,47 +324,83 @@ const Ad = () => {
           transform: translateY(-2px);
           box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
+        .reply-container {
+          margin-left: 2rem;
+          border-left: 2px solid #e2e8f0;
+          padding-left: 1rem;
+        }
       `}</style>
 
-      <div className="image-gallery mb-6">
+      {/* IMAGE GALLERY */}
+      <div className="image-gallery mb-6 relative">
         <img src={ad.images[idx].url} alt={ad.title} />
-        <div className="gallery-nav gallery-nav-left" onClick={() => setIdx((prev) => (prev === 0 ? ad.images.length - 1 : prev - 1))}>
+        <div
+          className="gallery-nav gallery-nav-left"
+          onClick={() =>
+            setIdx((prev) => (prev === 0 ? ad.images.length - 1 : prev - 1))
+          }
+        >
           <AiOutlineLeft size={24} />
         </div>
-        <div className="gallery-nav gallery-nav-right" onClick={() => setIdx((prev) => (prev === ad.images.length - 1 ? 0 : prev + 1))}>
+        <div
+          className="gallery-nav gallery-nav-right"
+          onClick={() =>
+            setIdx((prev) =>
+              prev === ad.images.length - 1 ? 0 : prev + 1
+            )
+          }
+        >
           <AiOutlineRight size={24} />
         </div>
       </div>
 
+      {/* MAIN CONTENT */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* AD DETAILS */}
         <div className="md:col-span-2">
           <div className="ad-details h-full">
             <div className="flex justify-between items-center mb-4">
               <h1 className="text-3xl font-bold text-gray-800">{ad.title}</h1>
-              <div 
-                className={`favorite-button ${isAnimating ? 'animate-heart' : ''}`}
-                onClick={handleFavoriteClick}
-              >
-                {isFavorite ? (
-                  <AiFillHeart size={32} className="text-red-500" />
-                ) : (
-                  <AiOutlineHeart size={32} className="text-gray-400" />
-                )}
+              <div className="flex flex-col items-center">
+                <div
+                  className={`favorite-button ${
+                    isAnimating ? "animate-heart" : ""
+                  }`}
+                  onClick={handleFavoriteClick}
+                >
+                  {isFavorite ? (
+                    <AiFillHeart size={32} className="text-red-500" />
+                  ) : (
+                    <AiOutlineHeart size={32} className="text-gray-400" />
+                  )}
+                </div>
+                {/* Display favorites count */}
+                <span className="text-xs text-gray-600 mt-1">
+                  {val?.users ? val.users.length : 0}
+                </span>
               </div>
             </div>
+
             <p className="text-2xl font-semibold text-green-600 mb-4">
               BDT. {Number(ad.price).toLocaleString()}
             </p>
             <p className="text-gray-600 mb-4">{ad.description}</p>
+
             <div className="flex justify-between items-center text-sm text-gray-500">
-              <p>Condition: <span className="font-semibold">{ad.condition}</span></p>
-              <p>{ad.location} - <Moment fromNow>{ad.publishedAt.toDate()}</Moment></p>
+              <p>
+                Condition: <span className="font-semibold">{ad.condition}</span>
+              </p>
+              <p>
+                {ad.location} - <Moment fromNow>{ad.publishedAt.toDate()}</Moment>
+              </p>
             </div>
+
             {ad.isSold && (
               <div className="mt-4">
                 <Sold singleAd={true} />
               </div>
             )}
+
             {ad.postedBy === auth.currentUser?.uid && (
               <button
                 className="mt-4 flex items-center text-red-500 hover:text-red-700 transition-colors duration-300"
@@ -295,35 +409,50 @@ const Ad = () => {
                 <FaTrashAlt className="mr-2" /> Delete Ad
               </button>
             )}
-            {ad.adType === "swap" && auth.currentUser && ad.postedBy !== auth.currentUser.uid && (
-              <button
-                className="mt-4 bg-purple-500 hover:bg-purple-600 text-white py-2 px-4 rounded"
-                onClick={handleBidClick}
-              >
-                Bid for Swap
-              </button>
-            )}
-            {ad.adType === "swap" && ad.postedBy === auth.currentUser?.uid && (
-              <button
-                className="mt-4 bg-purple-500 hover:bg-purple-600 text-white py-2 px-4 rounded"
-                onClick={handleViewBids}
-              >
-                View Bids
-              </button>
-            )}
+
+            {ad.adType === "swap" &&
+              auth.currentUser &&
+              ad.postedBy !== auth.currentUser.uid && (
+                <button
+                  className="mt-4 bg-purple-500 hover:bg-purple-600 text-white py-2 px-4 rounded"
+                  onClick={handleBidClick}
+                >
+                  Bid for Swap
+                </button>
+              )}
+
+            {ad.adType === "swap" &&
+              ad.postedBy === auth.currentUser?.uid && (
+                <button
+                  className="mt-4 bg-purple-500 hover:bg-purple-600 text-white py-2 px-4 rounded"
+                  onClick={handleViewBids}
+                >
+                  View Bids
+                </button>
+              )}
           </div>
         </div>
 
+        {/* SELLER INFO */}
         <div className="md:col-span-1">
           <div className="seller-info h-full">
             <h2 className="text-2xl font-semibold mb-4">Seller Information</h2>
-            <Link to={`/profile/${ad.postedBy}`} className="flex items-center mb-4 hover:bg-gray-100 p-2 rounded transition-colors duration-300">
+            <Link
+              to={`/profile/${ad.postedBy}`}
+              className="flex items-center mb-4 hover:bg-gray-100 p-2 rounded transition-colors duration-300"
+            >
               {seller?.photoUrl ? (
-                <img src={seller.photoUrl} alt={seller.name} className="w-12 h-12 rounded-full mr-4" />
+                <img
+                  src={seller.photoUrl}
+                  alt={seller.name}
+                  className="w-12 h-12 rounded-full mr-4"
+                />
               ) : (
                 <FaUserCircle size={48} className="mr-4 text-gray-400" />
               )}
-              <span className="text-lg font-medium text-gray-800">{seller?.name}</span>
+              <span className="text-lg font-medium text-gray-800">
+                {seller?.name}
+              </span>
             </Link>
             {auth.currentUser ? (
               <div className="space-y-3">
@@ -339,6 +468,7 @@ const Ad = () => {
                     <FaPhoneAlt size={16} className="mr-2" /> Show Contact Info
                   </button>
                 )}
+
                 {ad.postedBy !== auth.currentUser?.uid && (
                   <button
                     className="action-button bg-green-500 hover:bg-green-600 text-white py-3 px-4 rounded-lg flex items-center justify-center"
@@ -347,34 +477,55 @@ const Ad = () => {
                     <FaComments size={16} className="mr-2" /> Chat with Seller
                   </button>
                 )}
-                {ad.adType === "sell" && ad.postedBy !== auth.currentUser?.uid && (
-                  <button
-                    className="action-button bg-yellow-500 hover:bg-yellow-600 text-white py-3 px-4 rounded-lg flex items-center justify-center"
-                    onClick={bkashPaymentHandler}
-                  >
-                    Pay with bKash
-                  </button>
-                )}
+
+                {ad.adType === "sell" &&
+                  ad.postedBy !== auth.currentUser?.uid && (
+                    <button
+                      className="action-button bg-yellow-500 hover:bg-yellow-600 text-white py-3 px-4 rounded-lg flex items-center justify-center"
+                      onClick={bkashPaymentHandler}
+                    >
+                      Pay with bKash
+                    </button>
+                  )}
               </div>
             ) : (
               <p className="text-center text-gray-600 bg-gray-100 p-4 rounded">
-                Please <Link to="/login" className="text-blue-500 hover:underline">login</Link> to view contact info.
+                Please{" "}
+                <Link to="/login" className="text-blue-500 hover:underline">
+                  login
+                </Link>{" "}
+                to view contact info.
               </p>
             )}
           </div>
         </div>
       </div>
 
+      {/* ============================================= */}
+      {/* ========== SEPARATE REVIEWS SECTION ========== */}
+      {/* ============================================= */}
+      <ReviewSection adId={id} />
+
+      {/* BID DIALOG */}
       {showBidDialog && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
           <div className="bg-white p-6 rounded-lg max-w-md w-full">
             <h2 className="text-2xl font-bold mb-4">Bid for Swap</h2>
-            <p className="mb-4">Select one of your swap ads to bid for this item.</p>
+            <p className="mb-4">
+              Select one of your swap ads to bid for this item.
+            </p>
             <div className="space-y-4">
               {swapAds.map((swapAd) => (
-                <div key={swapAd.id} className="flex items-center justify-between p-2 border rounded">
+                <div
+                  key={swapAd.id}
+                  className="flex items-center justify-between p-2 border rounded"
+                >
                   <div className="flex items-center space-x-2">
-                    <img src={swapAd.images[0].url} alt={swapAd.title} className="w-12 h-12 object-cover rounded" />
+                    <img
+                      src={swapAd.images[0].url}
+                      alt={swapAd.title}
+                      className="w-12 h-12 object-cover rounded"
+                    />
                     <span>{swapAd.title}</span>
                   </div>
                   <button
@@ -396,22 +547,37 @@ const Ad = () => {
         </div>
       )}
 
+      {/* BIDS DIALOG */}
       {showBidsDialog && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
           <div className="bg-white p-6 rounded-lg max-w-3xl w-full">
             <h2 className="text-2xl font-bold mb-4">Bids for Your Ad</h2>
             <div className="space-y-4 max-h-96 overflow-y-auto">
               {bids.map((bid) => (
-                <div key={bid.id} className="flex items-center justify-between p-4 border rounded">
+                <div
+                  key={bid.id}
+                  className="flex items-center justify-between p-4 border rounded"
+                >
                   <div className="flex items-center space-x-4">
-                    <img src={bid.swapAd.images[0].url} alt={bid.swapAd.title} className="w-16 h-16 object-cover rounded" />
+                    <img
+                      src={bid.swapAd.images[0].url}
+                      alt={bid.swapAd.title}
+                      className="w-16 h-16 object-cover rounded"
+                    />
                     <div>
                       <h3 className="font-semibold">{bid.swapAd.title}</h3>
-                      <p className="text-sm text-gray-600">Bidder: {bid.bidder.name}</p>
+                      <p className="text-sm text-gray-600">
+                        Bidder: {bid.bidder.name}
+                      </p>
                     </div>
                   </div>
                   <button
-                    onClick={() => window.open(`/${bid.swapAd.category.toLowerCase()}/${bid.swapAdId}`, '_blank')}
+                    onClick={() =>
+                      window.open(
+                        `/${bid.swapAd.category.toLowerCase()}/${bid.swapAd.id}`,
+                        "_blank"
+                      )
+                    }
                     className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded"
                   >
                     View Ad
@@ -419,7 +585,9 @@ const Ad = () => {
                 </div>
               ))}
               {bids.length === 0 && (
-                <p className="text-center text-gray-600">No bids yet for this ad.</p>
+                <p className="text-center text-gray-600">
+                  No bids yet for this ad.
+                </p>
               )}
             </div>
             <button
@@ -436,4 +604,3 @@ const Ad = () => {
 };
 
 export default Ad;
-
