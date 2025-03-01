@@ -11,6 +11,8 @@ const AdCard = ({ ad }) => {
   const { val } = useSnapshot("favorites", ad.adId);
   const adLink = `/${ad.category.toLowerCase()}/${ad.adId}`;
   const isFavorite = val?.users?.includes(auth.currentUser?.uid);
+  // Count how many users have favorited this ad
+  const favoritesCount = val?.users ? val.users.length : 0;
   const [isAnimating, setIsAnimating] = useState(false);
 
   const handleFavoriteClick = () => {
@@ -46,7 +48,7 @@ const AdCard = ({ ad }) => {
               {ad.title}
             </h5>
           </Link>
-          <div>
+          <div className="flex flex-col items-center">
             <div
               onClick={handleFavoriteClick}
               className={`cursor-pointer transition-transform duration-300 ${isAnimating ? 'animate-heart' : ''}`}
@@ -57,6 +59,8 @@ const AdCard = ({ ad }) => {
                 <AiOutlineHeart size={27} className="text-gray-300" />
               )}
             </div>
+            {/* Display the count of favorites */}
+            <span className="text-xs text-gray-600 mt-1">{favoritesCount}</span>
           </div>
         </div>
 
