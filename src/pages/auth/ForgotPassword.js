@@ -26,34 +26,48 @@ const ForgotPassword = () => {
       setError(error.message);
     }
   };
+
   return (
-    <form className="shadow rounded p-3 mt-5 form" onSubmit={handleSubmit}>
-      <h3 className="text-center mb-3">Forgot Password</h3>
-      {success ? (
-        <p className="text-center mt-5">
-          An e-mail is sent containing password reset instructions
-        </p>
-      ) : (
-        <>
-          <div className="mb-3">
-            <label htmlFor="email" className="form-label">
-              Email
-            </label>
-            <input
-              type="email"
-              className="form-control"
-              name="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
-          </div>
-          {error ? <p className="text-center text-danger">{error}</p> : null}
-          <div className="text-center mb-3">
-            <button className="btn btn-secondary btn-sm">Send</button>
-          </div>
-        </>
-      )}
-    </form>
+    <div className="min-h-screen bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center p-6">
+      <div className="bg-white rounded-lg shadow-xl border border-gray-200 p-8 max-w-md w-full">
+        <h2 className="text-center text-2xl font-bold text-gray-800 mb-6">
+          Forgot Password
+        </h2>
+        {success ? (
+          <p className="text-center text-green-600">
+            An email has been sent with password reset instructions.
+          </p>
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div>
+              <label htmlFor="email" className="block text-gray-700 mb-1">
+                Email Address
+              </label>
+              <input
+                type="email"
+                name="email"
+                id="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@example.com"
+                className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400 transition"
+              />
+            </div>
+            {error && (
+              <p className="text-center text-red-600 text-sm">{error}</p>
+            )}
+            <div className="text-center">
+              <button
+                type="submit"
+                className="px-6 py-3 bg-blue-600 text-white rounded-md shadow hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-300 transition"
+              >
+                Send Reset Link
+              </button>
+            </div>
+          </form>
+        )}
+      </div>
+    </div>
   );
 };
 

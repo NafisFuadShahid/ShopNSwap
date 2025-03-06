@@ -6,7 +6,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { FaUser, FaEnvelope, FaLock } from "react-icons/fa";
 import { signOut } from "firebase/auth";
 
-export default function Component() {
+export default function Register() {
   const [values, setValues] = useState({
     name: "",
     email: "",
@@ -38,11 +38,7 @@ export default function Component() {
     setValues({ ...values, error: "", loading: true });
 
     try {
-      const result = await createUserWithEmailAndPassword(
-        auth,
-        email,
-        password
-      );
+      const result = await createUserWithEmailAndPassword(auth, email, password);
 
       await setDoc(doc(db, "users", result.user.uid), {
         uid: result.user.uid,
@@ -53,7 +49,6 @@ export default function Component() {
       });
 
       await sendEmailVerification(result.user);
-
       await signOut(auth);
 
       setValues({
@@ -72,79 +67,74 @@ export default function Component() {
   };
 
   return (
-    <div className="min-h-screen bg-purple-50 bg-opacity-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-lg shadow-lg border border-purple-100 p-8 max-w-md w-full">
-        <h2 className="text-3xl font-bold text-center text-purple-800 mb-6">
-          Create An Account
+    <div className="min-h-screen bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center p-6">
+      <div className="bg-white rounded-lg shadow-xl border border-gray-200 p-10 max-w-md w-full">
+        <h2 className="text-3xl font-extrabold text-center text-gray-800 mb-8">
+          Create Your Account
         </h2>
         {error && (
-          <div className="mb-4 p-3 text-red-700 bg-red-100 rounded">
+          <div className="mb-4 p-3 text-red-600 bg-red-100 border border-red-200 rounded">
             {error}
           </div>
         )}
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-5">
           <div className="relative">
-            <FaUser className="absolute left-3 top-1/2 transform -translate-y-1/2 text-purple-400" />
+            <FaUser className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
             <input
               type="text"
               name="name"
               value={name}
               onChange={handleChange}
               placeholder="Full Name"
-              className="w-full pl-10 pr-4 py-2 border border-purple-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 transition"
+              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 transition"
             />
           </div>
-
           <div className="relative">
-            <FaEnvelope className="absolute left-3 top-1/2 transform -translate-y-1/2 text-purple-400" />
+            <FaEnvelope className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
             <input
               type="email"
               name="email"
               value={email}
               onChange={handleChange}
               placeholder="Email Address"
-              className="w-full pl-10 pr-4 py-2 border border-purple-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 transition"
+              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 transition"
             />
           </div>
-
           <div className="relative">
-            <FaLock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-purple-400" />
+            <FaLock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
             <input
               type="password"
               name="password"
               value={password}
               onChange={handleChange}
               placeholder="Password"
-              className="w-full pl-10 pr-4 py-2 border border-purple-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 transition"
+              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 transition"
             />
           </div>
-
           <div className="relative">
-            <FaLock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-purple-400" />
+            <FaLock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
             <input
               type="password"
               name="confirmPassword"
               value={confirmPassword}
               onChange={handleChange}
               placeholder="Confirm Password"
-              className="w-full pl-10 pr-4 py-2 border border-purple-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 transition"
+              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 transition"
             />
           </div>
-
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-2 bg-purple-600 text-white font-semibold rounded-lg shadow-md hover:bg-purple-700 focus:outline-none focus:ring-4 focus:ring-purple-300 transition transform hover:scale-105"
+            className="w-full py-3 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-300 transition transform hover:scale-105"
           >
             {loading ? "Registering..." : "Register"}
           </button>
         </form>
-
         <p className="mt-6 text-center text-gray-600">
           Already have an account?{" "}
           <Link
             to="/auth/login"
-            className="text-purple-600 hover:text-purple-800 hover:underline"
+            className="text-blue-600 hover:text-blue-800 hover:underline"
           >
             Log In
           </Link>
