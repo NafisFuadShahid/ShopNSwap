@@ -4,6 +4,7 @@ import { createUserWithEmailAndPassword, sendEmailVerification } from "firebase/
 import { setDoc, doc, Timestamp } from "firebase/firestore";
 import { useNavigate, Link } from "react-router-dom";
 import { FaUser, FaEnvelope, FaLock } from "react-icons/fa";
+import { signOut } from "firebase/auth";
 
 export default function Component() {
   const [values, setValues] = useState({
@@ -52,6 +53,8 @@ export default function Component() {
       });
 
       await sendEmailVerification(result.user);
+
+      await signOut(auth);
 
       setValues({
         name: "",
