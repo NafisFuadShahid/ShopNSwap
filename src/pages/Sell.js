@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useContext } from "react";
+import { useMap } from 'react-leaflet';
 import { PiUploadDuotone } from "react-icons/pi";
 import { FaUserAlt, FaSearch, FaHeart, FaCheck, FaComments, FaSignOutAlt, FaMapMarkerAlt, FaCrosshairs } from "react-icons/fa";
 import { ref, getDownloadURL, uploadBytes } from "firebase/storage";
@@ -177,6 +178,22 @@ const Sell = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [locationName, setLocationName] = useState("");
 
+    const currentLocationIcon = L.icon({
+      iconUrl: 'https://cdn-icons-png.flaticon.com/512/684/684908.png',
+      iconSize: [30, 42],
+      iconAnchor: [15, 42],
+    });
+
+    const RecenterAutomatically = ({ lat, lng }) => {
+      const map = useMap();
+      useEffect(() => {
+        if(lat && lng){
+          map.setView([lat, lng], map.getZoom(), { animate: true });
+        }
+      }, [lat, lng]);
+      return null;
+    };
+
     // Fetch current location when the popup opens
     useEffect(() => {
       if (isOpen) {
@@ -225,7 +242,7 @@ const Sell = () => {
         if (data.error) {
           throw new Error(data.error);
         }
-
+  
         const { address } = data;
         const locationString = address.city || address.town || address.village || address.county || address.state || "Unknown location";
         setLocationName(locationString);
@@ -280,12 +297,21 @@ const Sell = () => {
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
               />
-              {marker && <Marker position={[marker.lat, marker.lng]} />}
+              {marker && (
+                <>
+                  <Marker 
+                    position={[marker.lat, marker.lng]} 
+                    icon={currentLocationIcon}
+                  />
+                  <RecenterAutomatically lat={marker.lat} lng={marker.lng} />
+                </>
+              )}
               <MapEvents />
             </MapContainer>
             <button
               onClick={fetchCurrentLocation}
-              className="absolute bottom-4 left-4 p-2 bg-white rounded-full shadow-md hover:bg-gray-100 transition-colors z-10 flex items-center gap-2"
+              style={{ zIndex: 1001 }} // Ensure button appears over the map
+              className="absolute bottom-4 left-4 p-2 bg-white rounded-full shadow-md hover:bg-gray-100 transition-colors flex items-center gap-2"
               title="Use current location"
               disabled={isLoading}
             >
