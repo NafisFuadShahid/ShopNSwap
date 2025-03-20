@@ -1,7 +1,7 @@
-karrot
+karrot - done
 user cant chat until reached the location
-more more secure
+more more secure - done
 interested in feature(notification)
-multifacing authentication
-rating system
+multifacing authentication - done
+rating system - done
 until reached location everything will be pending

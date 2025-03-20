@@ -316,7 +316,7 @@ const Sell = () => {
       const result = await addDoc(collection(db, "ads"), {
         images: imgs,
         title,
-        titleLower: title.toLowerCase(), // Add this field for normalized search
+        titleLower: title.toLowerCase(), 
         category,
         price: listingType === "sell" ? price : 0,
         address,
