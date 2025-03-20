@@ -311,9 +311,12 @@ const Sell = () => {
         }
       }
 
+      // Inside your handleSubmit function, update the addDoc call as follows:
+
       const result = await addDoc(collection(db, "ads"), {
         images: imgs,
         title,
+        titleLower: title.toLowerCase(), // Add this field for normalized search
         category,
         price: listingType === "sell" ? price : 0,
         address,
