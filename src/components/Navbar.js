@@ -1,4 +1,5 @@
 import { signOut } from "firebase/auth";
+import { limit } from "firebase/firestore";
 import { doc, updateDoc, onSnapshot, collection, getDocs, query, where } from "firebase/firestore";
 import React, { useContext, useEffect, useState, useRef, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
@@ -106,44 +107,35 @@ const Navbar = () => {
   const handleSearchChange = async (e) => {
     const queryText = e.target.value;
     setSearchQuery(queryText);
-
+  
     if (queryText.trim()) {
       const adsRef = collection(db, "ads");
       
       try {
-        // First approach: search for titles that start with the query
-        const startWithQuery = query(
-          adsRef,
-          where("title", ">=", queryText),
-          where("title", "<=", queryText + "\uf8ff")
-        );
+        // Get all documents from the ads collection (with a reasonable limit)
+        const allAdsQuery = query(adsRef, limit(100));
+        const allAdsSnapshot = await getDocs(allAdsQuery);
         
-        const querySnapshot = await getDocs(startWithQuery);
-        const results = querySnapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        }));
-        
-        // Second approach: try a case-insensitive search if first approach doesn't return results
-        if (results.length === 0) {
-          const caseInsensitiveQuery = query(
-            adsRef,
-            where("title", ">=", queryText.toLowerCase()),
-            where("title", "<=", queryText.toLowerCase() + "\uf8ff")
-          );
-          
-          const lowerCaseSnapshot = await getDocs(caseInsensitiveQuery);
-          const lowerCaseResults = lowerCaseSnapshot.docs.map((doc) => ({
+        // Filter the results client-side for more flexible matching
+        const results = allAdsSnapshot.docs
+          .map(doc => ({
             id: doc.id,
-            ...doc.data(),
-          }));
-          
-          setSearchResults(lowerCaseResults);
-        } else {
-          setSearchResults(results);
-        }
+            ...doc.data()
+          }))
+          .filter(ad => {
+            // Check if title contains the query text (case-insensitive)
+            const titleMatches = ad.title && ad.title.toLowerCase().includes(queryText.toLowerCase());
+            
+            // Check if category contains the query text (case-insensitive)
+            const categoryMatches = ad.category && ad.category.toLowerCase().includes(queryText.toLowerCase());
+            
+            return titleMatches || categoryMatches;
+          });
+        
+        setSearchResults(results);
       } catch (error) {
         console.error("Error fetching search results:", error);
+        setSearchResults([]);
       }
     } else {
       setSearchResults([]);
