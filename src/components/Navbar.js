@@ -113,7 +113,7 @@ const Navbar = () => {
       
       try {
         // Get all documents from the ads collection (with a reasonable limit)
-        const allAdsQuery = query(adsRef, limit(100));
+        const allAdsQuery = query(adsRef, limit(5));
         const allAdsSnapshot = await getDocs(allAdsQuery);
         
         // Filter the results client-side for more flexible matching
