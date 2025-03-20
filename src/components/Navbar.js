@@ -12,196 +12,7 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 const libraries = ["places"];
 
 const MapPopup = ({ isOpen, onClose, userLocation, onLocationUpdate }) => {
-  const { isLoaded, loadError } = useLoadScript({
-    googleMapsApiKey: "AIzaSyAih9-dwM_G_gKQEuNwNPjGyP6tipZ15m8",
-    libraries,
-  });
-
-  const [map, setMap] = useState(null);
-  const [marker, setMarker] = useState(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [locationName, setLocationName] = useState("");
-
-  const onLoad = useCallback((map) => {
-    const bounds = new window.google.maps.LatLngBounds(userLocation);
-    map.fitBounds(bounds);
-    setMap(map);
-    setMarker(userLocation);
-  }, [userLocation]);
-
-  const onUnmount = useCallback(() => {
-    setMap(null);
-  }, []);
-
-  const handleMapClick = async (event) => {
-    const lat = event.latLng.lat();
-    const lng = event.latLng.lng();
-    await updateMarkerAndCenter({ lat, lng });
-  };
-
-  const fetchRegionName = async (lat, lng) => {
-    try {
-      const response = await fetch(
-        `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=AIzaSyAih9-dwM_G_gKQEuNwNPjGyP6tipZ15m8`
-      );
-      const data = await response.json();
-      
-      if (data.status !== "OK") {
-        throw new Error(`Geocoding API error: ${data.status}`);
-      }
-
-      const result = data.results[0];
-      if (!result) {
-        throw new Error("No results found");
-      }
-
-      const locality = result.address_components.find(component => 
-        component.types.includes("locality")
-      );
-      const adminArea = result.address_components.find(component => 
-        component.types.includes("administrative_area_level_1")
-      );
-
-      let locationString = "Unknown location";
-      if (locality && adminArea) {
-        locationString = `${locality.long_name}, ${adminArea.long_name}`;
-      } else if (adminArea) {
-        locationString = adminArea.long_name;
-      }
-
-      setLocationName(locationString);
-      return locationString;
-    } catch (error) {
-      console.error("Error fetching region name:", error);
-      return "Unknown location";
-    }
-  };
-
-  const updateMarkerAndCenter = async (location) => {
-    setIsLoading(true);
-    setMarker(location);
-    if (map) {
-      map.panTo(location);
-      map.setZoom(15);
-    }
-    const locationString = await fetchRegionName(location.lat, location.lng);
-    setIsLoading(false);
-    return locationString;
-  };
-
-  const handleCurrentLocation = () => {
-    setIsLoading(true);
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        async (position) => {
-          const currentLocation = {
-            lat: position.coords.latitude,
-            lng: position.coords.longitude,
-          };
-          await updateMarkerAndCenter(currentLocation);
-          setIsLoading(false);
-        },
-        (error) => {
-          console.error("Geolocation error:", error);
-          let errorMessage = "Unable to fetch your location. ";
-          switch(error.code) {
-            case error.PERMISSION_DENIED:
-              errorMessage += "User denied the request for Geolocation.";
-              break;
-            case error.POSITION_UNAVAILABLE:
-              errorMessage += "Location information is unavailable.";
-              break;
-            case error.TIMEOUT:
-              errorMessage += "The request to get user location timed out.";
-              break;
-            default:
-              errorMessage += "An unknown error occurred.";
-              break;
-          }
-          alert(errorMessage);
-          setIsLoading(false);
-        },
-        { 
-          enableHighAccuracy: true, 
-          timeout: 10000, 
-          maximumAge: 0 
-        }
-      );
-    } else {
-      alert("Geolocation is not supported by your browser.");
-      setIsLoading(false);
-    }
-  };
-
-  const handleConfirm = () => {
-    if (marker) {
-      onLocationUpdate(marker.lat, marker.lng, locationName);
-      onClose();
-    } else {
-      alert("Please select a location first.");
-    }
-  };
-
-  if (!isOpen) return null;
-
-  if (loadError) return <div>Error loading maps</div>;
-  if (!isLoaded) return <div>Loading maps...</div>;
-
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white p-4 rounded-lg shadow-lg w-[80vw] max-w-3xl">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-bold">Update Your Location</h2>
-          {isLoading && (
-            <span className="text-sm text-gray-500">Updating location...</span>
-          )}
-        </div>
-        <div className="relative">
-          <GoogleMap
-            mapContainerStyle={{ width: '100%', height: '400px' }}
-            center={userLocation}
-            zoom={10}
-            onLoad={onLoad}
-            onUnmount={onUnmount}
-            onClick={handleMapClick}
-          >
-            {marker && <Marker position={marker} />}
-          </GoogleMap>
-          <button
-            onClick={handleCurrentLocation}
-            className="absolute bottom-4 left-4 p-2 bg-white rounded-full shadow-md hover:bg-gray-100 transition-colors z-10 flex items-center gap-2"
-            title="Use current location"
-            disabled={isLoading}
-          >
-            {isLoading ? (
-              <span className="animate-spin">⏳</span>
-            ) : (
-              <>
-                <FaCrosshairs className="w-5 h-5 text-blue-600" />
-                <span className="text-sm font-medium">Current Location</span>
-              </>
-            )}
-          </button>
-        </div>
-        <p className="mt-2">Selected Location: {locationName || "Not selected"}</p>
-        <div className="mt-4 flex justify-end space-x-2">
-          <button 
-            onClick={onClose} 
-            className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300 transition-colors"
-          >
-            Cancel
-          </button>
-          <button 
-            onClick={handleConfirm}
-            disabled={!marker || isLoading}
-            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors disabled:bg-blue-300"
-          >
-            Confirm Location
-          </button>
-        </div>
-      </div>
-    </div>
-  );
+  // ...existing code...
 };
 
 const Navbar = () => {
@@ -298,19 +109,39 @@ const Navbar = () => {
 
     if (queryText.trim()) {
       const adsRef = collection(db, "ads");
-      const q = query(
-        adsRef,
-        where("title", ">=", queryText.toLowerCase()),
-        where("title", "<=", queryText.toLowerCase() + "\uf8ff")
-      );
-
+      
       try {
-        const querySnapshot = await getDocs(q);
+        // First approach: search for titles that start with the query
+        const startWithQuery = query(
+          adsRef,
+          where("title", ">=", queryText),
+          where("title", "<=", queryText + "\uf8ff")
+        );
+        
+        const querySnapshot = await getDocs(startWithQuery);
         const results = querySnapshot.docs.map((doc) => ({
           id: doc.id,
           ...doc.data(),
         }));
-        setSearchResults(results);
+        
+        // Second approach: try a case-insensitive search if first approach doesn't return results
+        if (results.length === 0) {
+          const caseInsensitiveQuery = query(
+            adsRef,
+            where("title", ">=", queryText.toLowerCase()),
+            where("title", "<=", queryText.toLowerCase() + "\uf8ff")
+          );
+          
+          const lowerCaseSnapshot = await getDocs(caseInsensitiveQuery);
+          const lowerCaseResults = lowerCaseSnapshot.docs.map((doc) => ({
+            id: doc.id,
+            ...doc.data(),
+          }));
+          
+          setSearchResults(lowerCaseResults);
+        } else {
+          setSearchResults(results);
+        }
       } catch (error) {
         console.error("Error fetching search results:", error);
       }
