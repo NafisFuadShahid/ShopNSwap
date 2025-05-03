@@ -1,74 +1,218 @@
-import { signOut } from "firebase/auth";
-import { limit } from "firebase/firestore";
-import { doc, updateDoc, onSnapshot, collection, getDocs, query, where } from "firebase/firestore";
-import React, { useContext, useEffect, useState, useRef, useCallback } from "react";
+// src/components/Navbar.jsx
+import React, { useContext, useEffect, useState, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { AuthContext } from "../context/auth";
+import { signOut } from "firebase/auth";
+import {
+  doc,
+  updateDoc,
+  onSnapshot,
+  collection,
+  query,
+  getDocs,     
+  limit,
+  orderBy,
+} from "firebase/firestore";
 import { auth, db } from "../firebaseConfig";
-import { FaUserAlt, FaSearch, FaHeart, FaComments, FaSignOutAlt, FaMapMarkerAlt, FaCrosshairs } from "react-icons/fa";
+import { AuthContext } from "../context/auth";
+import {
+  FaUserAlt,
+  FaSearch,
+  FaHeart,
+  FaComments,
+  FaSignOutAlt,
+  FaMapMarkerAlt,
+  FaBell,
+} from "react-icons/fa";
 import { MdPostAdd } from "react-icons/md";
-import { GoogleMap, useLoadScript, Marker } from '@react-google-maps/api';
-import 'bootstrap/dist/css/bootstrap.min.css';
+import { GoogleMap, useLoadScript, Marker } from "@react-google-maps/api";
+import "bootstrap/dist/css/bootstrap.min.css";
 
 const libraries = ["places"];
 
-const MapPopup = ({ isOpen, onClose, userLocation, onLocationUpdate }) => {
-  // ...existing code...
-};
+function MapPopup({ isOpen, onClose, userLocation, onLocationUpdate }) {
+  const { isLoaded, loadError } = useLoadScript({
+    googleMapsApiKey: process.env.REACT_APP_GOOGLE_MAPS_API_KEY,
+    libraries,
+  });
+  const [marker, setMarker] = useState(userLocation);
+  const [locName, setLocName] = useState("");
 
-const Navbar = () => {
+  useEffect(() => {
+    setMarker(userLocation);
+    setLocName("");
+  }, [userLocation, isOpen]);
+
+  if (!isOpen) return null;
+  if (loadError) return <div className="p-4">Error loading map</div>;
+  if (!isLoaded) return <div className="p-4">Loading map…</div>;
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white dark:bg-gray-800 rounded-lg p-4 w-11/12 max-w-lg h-3/4 flex flex-col">
+        <h2 className="text-xl font-semibold mb-2">Update Location</h2>
+        <div className="flex-1">
+          <GoogleMap
+            mapContainerStyle={{ width: "100%", height: "100%" }}
+            center={marker}
+            zoom={12}
+            onClick={(e) =>
+              setMarker({ lat: e.latLng.lat(), lng: e.latLng.lng() })
+            }
+          >
+            <Marker
+              position={marker}
+              draggable
+              onDragEnd={(e) =>
+                setMarker({ lat: e.latLng.lat(), lng: e.latLng.lng() })
+              }
+            />
+          </GoogleMap>
+        </div>
+        <input
+          type="text"
+          value={locName}
+          onChange={(e) => setLocName(e.target.value)}
+          placeholder="Location name"
+          className="mt-2 p-2 border rounded w-full dark:bg-gray-700 dark:text-white"
+        />
+        <div className="mt-2 flex justify-end space-x-2">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 bg-gray-300 hover:bg-gray-400 rounded"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={() => {
+              onLocationUpdate(marker.lat, marker.lng, locName);
+              onClose();
+            }}
+            className="px-4 py-2 bg-blue-600 text-white hover:bg-blue-700 rounded"
+          >
+            Save
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const NavLink = ({ to, children }) => (
+  <Link
+    to={to}
+    className="text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-white px-4 py-2 rounded-md text-sm font-medium relative group"
+  >
+    {children}
+    <span className="absolute bottom-0 left-0 w-full h-0.5 bg-blue-600 transform scale-x-0 transition-transform duration-300 group-hover:scale-x-100" />
+  </Link>
+);
+
+export default function Navbar() {
   const { user, unread } = useContext(AuthContext);
   const navigate = useNavigate();
+
   const [photoUrl, setPhotoUrl] = useState(null);
   const [userName, setUserName] = useState("");
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [notifOpen, setNotifOpen] = useState(false);
+  const [notifications, setNotifications] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [showMapPopup, setShowMapPopup] = useState(false);
-  const [userLocation, setUserLocation] = useState({ lat: 23.8103, lng: 90.4125 }); // Default to Dhaka, Bangladesh
+  const [userLocation, setUserLocation] = useState({ lat: 23.8103, lng: 90.4125 });
   const [locationName, setLocationName] = useState("");
   const dropdownRef = useRef(null);
+  const notifRef = useRef(null);
   const searchRef = useRef(null);
 
+  // fetch user profile
   useEffect(() => {
-    if (user) {
-      const userDocRef = doc(db, "users", user.uid);
-      const unsubscribe = onSnapshot(userDocRef, (docSnapshot) => {
-        if (docSnapshot.exists()) {
-          const userData = docSnapshot.data();
-          setPhotoUrl(userData.photoUrl || null);
-          setUserName(userData.name || user.displayName || "User");
-          if (userData.lat && userData.lon) {
-            setUserLocation({ lat: parseFloat(userData.lat), lng: parseFloat(userData.lon) });
-          }
-          setLocationName(userData.locationName || "");
-        }
-      });
-      return () => unsubscribe();
-    }
+    if (!user) return;
+    const unsub = onSnapshot(doc(db, "users", user.uid), (snap) => {
+      if (snap.exists()) {
+        const d = snap.data();
+        setPhotoUrl(d.photoUrl || null);
+        setUserName(d.name || user.displayName || "User");
+        if (d.lat && d.lon) setUserLocation({ lat: +d.lat, lng: +d.lon });
+        setLocationName(d.locationName || "");
+      }
+    });
+    return unsub;
   }, [user]);
 
+  // subscribe to notifications
   useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+    if (!user) return;
+    const notifCol = collection(db, "users", user.uid, "notification");
+    const q = query(notifCol, orderBy("createdAt", "desc"));
+    const unsub = onSnapshot(q, (snap) => {
+      const notifs = snap.docs
+        .map((d) => ({ id: d.id, ...d.data() }))
+        .filter((n) => !n.isRead);
+      setNotifications(notifs);
+    });
+    return unsub;
+  }, [user]);
+
+  // close menus/search on outside click
+  useEffect(() => {
+    const handler = (e) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target))
         setDropdownOpen(false);
-      }
-      if (searchRef.current && !searchRef.current.contains(event.target)) {
+      if (notifRef.current && !notifRef.current.contains(e.target))
+        setNotifOpen(false);
+      if (searchRef.current && !searchRef.current.contains(e.target))
         setSearchResults([]);
-      }
     };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
   }, []);
 
   const handleSignout = async () => {
-    const confirm = window.confirm("Are you sure you want to log out?");
-    if (confirm) {
-      await updateDoc(doc(db, "users", user.uid), {
-        isOnline: false,
-      });
-      await signOut(auth);
-      navigate("/auth/login");
+    if (!window.confirm("Are you sure you want to log out?")) return;
+    await updateDoc(doc(db, "users", user.uid), { isOnline: false });
+    await signOut(auth);
+    navigate("/auth/login");
+  };
+
+  const handleNotificationClick = async (notif) => {
+    // mark read in Firestore
+    await updateDoc(doc(db, "users", user.uid, "notification", notif.id), {
+      isRead: true,
+    });
+    // remove locally for instant badge update
+    setNotifications((prev) => prev.filter((n) => n.id !== notif.id));
+    setNotifOpen(false);
+    navigate(notif.link);
+  };
+
+  const handleSearch = (e) => {
+    e.preventDefault();
+    if (!searchQuery.trim()) return;
+    navigate(`/search?q=${encodeURIComponent(searchQuery)}`);
+    setSearchResults([]);
+  };
+
+  const handleSearchChange = async (e) => {
+    const qText = e.target.value;
+    setSearchQuery(qText);
+    if (!qText.trim()) {
+      setSearchResults([]);
+      return;
+    }
+    try {
+      const adsRef = collection(db, "ads");
+      const snap = await getDocs(query(adsRef, limit(5)));
+      setSearchResults(
+        snap.docs
+          .map((d) => ({ id: d.id, ...d.data() }))
+          .filter((ad) =>
+            [ad.title, ad.category]
+              .some((f) => f?.toLowerCase().includes(qText.toLowerCase()))
+          )
+      );
+    } catch {
+      setSearchResults([]);
     }
   };
 
@@ -80,226 +224,215 @@ const Navbar = () => {
     setShowMapPopup(true);
   };
 
-  const handleLocationUpdate = async (lat, lng, locationName) => {
+  const handleLocationUpdate = async (lat, lng, name) => {
     try {
       await updateDoc(doc(db, "users", user.uid), {
         lat: lat.toString(),
         lon: lng.toString(),
-        locationName: locationName,
+        locationName: name,
       });
       setUserLocation({ lat, lng });
-      setLocationName(locationName);
+      setLocationName(name);
       alert("Location updated successfully!");
-    } catch (error) {
-      console.error("Error updating location:", error);
-      alert("Failed to update location. Please try again.");
+    } catch {
+      alert("Failed to update location.");
     }
-  };
-
-  const handleSearch = (e) => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      navigate(`/search?q=${encodeURIComponent(searchQuery)}`);
-      setSearchResults([]);
-    }
-  };
-
-  const handleSearchChange = async (e) => {
-    const queryText = e.target.value;
-    setSearchQuery(queryText);
-  
-    if (queryText.trim()) {
-      const adsRef = collection(db, "ads");
-      
-      try {
-        // Get all documents from the ads collection (with a reasonable limit)
-        const allAdsQuery = query(adsRef, limit(5));
-        const allAdsSnapshot = await getDocs(allAdsQuery);
-        
-        // Filter the results client-side for more flexible matching
-        const results = allAdsSnapshot.docs
-          .map(doc => ({
-            id: doc.id,
-            ...doc.data()
-          }))
-          .filter(ad => {
-            // Check if title contains the query text (case-insensitive)
-            const titleMatches = ad.title && ad.title.toLowerCase().includes(queryText.toLowerCase());
-            
-            // Check if category contains the query text (case-insensitive)
-            const categoryMatches = ad.category && ad.category.toLowerCase().includes(queryText.toLowerCase());
-            
-            return titleMatches || categoryMatches;
-          });
-        
-        setSearchResults(results);
-      } catch (error) {
-        console.error("Error fetching search results:", error);
-        setSearchResults([]);
-      }
-    } else {
-      setSearchResults([]);
-    }
-  };
-
-  const toggleDropdown = () => {
-    setDropdownOpen(!dropdownOpen);
-  };
-
-  const closeDropdown = () => {
-    setDropdownOpen(false);
   };
 
   return (
-    <nav className="bg-white shadow-md dark:bg-gray-800 transition-all duration-300">
-      <div className="max-w-[95%] mx-auto px-4">
-        <div className="flex justify-between items-center h-20">
+    <nav className="bg-white dark:bg-gray-800 shadow-md">
+      <div className="max-w-7xl mx-auto px-4">
+        <div className="flex justify-between h-16 items-center">
+          {/* Left side */}
           <div className="flex items-center space-x-8">
-          <Link to="/" className="flex-shrink-0 flex items-center">
-            <svg
-              className="h-10 w-auto text-primary"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"
-              />
-            </svg>
-            <span className="ml-2 text-2xl font-semibold text-gray-800 dark:text-white">
-              ShopNSwap
-            </span>
-          </Link>
-            <div className="hidden md:flex items-center space-x-1">
+            <Link to="/" className="flex items-center">
+              <svg
+                className="h-8 w-8 text-blue-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"
+                />
+              </svg>
+              <span className="ml-2 text-xl font-bold text-gray-800 dark:text-white">
+                ShopNSwap
+              </span>
+            </Link>
+            <div className="hidden md:flex space-x-4">
               <NavLink to="/buy">Buy</NavLink>
               <NavLink to="/swap">Swap</NavLink>
               <NavLink to="/donate">Donate</NavLink>
             </div>
           </div>
 
-          <div className="flex items-center space-x-6">
+          {/* Right side */}
+          <div className="flex items-center space-x-4">
+            {/* Search */}
             <div className="relative" ref={searchRef}>
-              <form onSubmit={handleSearch} className="relative">
+              <form onSubmit={handleSearch}>
                 <input
                   type="text"
-                  className="w-96 pl-10 pr-4 py-2 rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:text-white transition-all duration-300 hover:shadow-md"
-                  placeholder="Search..."
                   value={searchQuery}
                   onChange={handleSearchChange}
+                  placeholder="Search..."
+                  className="pl-8 pr-4 py-1 rounded-full border focus:outline-none"
                 />
-                <button
-                  type="submit"
-                  className="absolute inset-y-0 left-0 pl-3 flex items-center"
-                >
-                  <FaSearch className="h-5 w-5 text-gray-400" />
-                </button>
+                <FaSearch className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400" />
               </form>
               {searchResults.length > 0 && (
-                <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-700 rounded-md shadow-lg">
-                  {searchResults.map((result) => (
+                <div className="absolute mt-1 w-full bg-white dark:bg-gray-700 rounded shadow-lg z-20">
+                  {searchResults.map((r) => (
                     <div
-                      key={result.id}
+                      key={r.id}
                       className="px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer"
                       onClick={() => {
-                        setSearchQuery(result.title);
+                        navigate(`/ad/${r.id}`);
                         setSearchResults([]);
-                        navigate(`/ad/${result.id}`);
                       }}
                     >
-                      <div className="font-medium">{result.title}</div>
-                      <div className="text-sm text-gray-500 dark:text-gray-300">{result.category}</div>
-                      <div className="text-sm text-gray-500 dark:text-gray-300">BDT{result.price}</div>
+                      <div className="font-medium">{r.title}</div>
+                      <div className="text-sm text-gray-500 dark:text-gray-300">
+                        {r.category}
+                      </div>
                     </div>
                   ))}
                 </div>
               )}
             </div>
 
+            {/* Post Ad */}
             <Link
               to="/sell"
-              className="hidden md:flex px-4 py-2 rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-300 ease-in-out transform hover:-translate-y-1 hover:shadow-lg"
+              className="hidden md:flex items-center px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
             >
-              <MdPostAdd className="inline-block mr-1" /> Post Ad
+              <MdPostAdd className="mr-1" /> Post Ad
             </Link>
 
+            {/* Location */}
             <button
               onClick={handleLocationClick}
-              className="text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-white transition duration-300 ease-in-out transform hover:scale-110"
+              className="text-gray-600 hover:text-blue-600"
               title="Update Location"
             >
-              <FaMapMarkerAlt className="h-6 w-6" />
+              <FaMapMarkerAlt className="h-5 w-5" />
             </button>
             {locationName && (
-              <span className="text-sm text-gray-600 dark:text-gray-300">{locationName}</span>
+              <span className="text-sm text-gray-600 dark:text-gray-300">
+                {locationName}
+              </span>
             )}
 
-            {user ? (
-              <div className="relative" ref={dropdownRef}>
+            {/* Notifications */}
+            {user && (
+              <div className="relative" ref={notifRef}>
                 <button
-                  type="button"
-                  className="flex items-center space-x-2 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 rounded-full transition duration-300 ease-in-out transform hover:scale-105"
-                  onClick={toggleDropdown}
+                  onClick={() => setNotifOpen((o) => !o)}
+                  className="text-gray-600 hover:text-blue-600"
+                  title="Notifications"
                 >
-                  {photoUrl ? (
-                    <img
-                      className="h-10 w-10 rounded-full object-cover border-2 border-blue-500"
-                      src={photoUrl}
-                      alt={userName}
-                    />
-                  ) : (
-                    <FaUserAlt className="h-10 w-10 rounded-full p-2 bg-gray-200 text-gray-600" />
+                  <FaBell className="h-5 w-5" />
+                  {notifications.length > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full px-1">
+                      {notifications.length}
+                    </span>
                   )}
                 </button>
-
-                {dropdownOpen && (
-                  <div className="absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white dark:bg-gray-700 ring-1 ring-black ring-opacity-5 focus:outline-none z-50">
-                    <div className="px-4 py-2 text-sm text-gray-700 dark:text-gray-200 border-b border-gray-200 dark:border-gray-600">
-                      {userName}
-                    </div>
-                    <DropdownLink to={`/profile/${user.uid}`} icon={FaUserAlt} onClick={closeDropdown}>
-                      Profile
-                    </DropdownLink>
-                    <DropdownLink to="/favorites" icon={FaHeart} onClick={closeDropdown}>
-                      My Favorites
-                    </DropdownLink>
-                    <DropdownLink 
-                      to="/chat" 
-                      icon={FaComments}
-                      onClick={closeDropdown}
-                      className={unread.length ? "bg-red-50 dark:bg-red-900/50" : ""}
-                    >
-                      Chat
-                      {unread.length > 0 && (
-                        <span className="ml-1 bg-red-500 text-white text-xs font-bold rounded-full px-2 py-0.5">
-                          {unread.length}
-                        </span>
-                      )}
-                    </DropdownLink>
-                    <button
-                      onClick={() => {
-                        handleSignout();
-                        toggleDropdown();
-                      }}
-                      className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-600 transition duration-300 ease-in-out"
-                    >
-                      <FaSignOutAlt className="inline-block mr-2" /> Sign out
-                    </button>
+                {notifOpen && (
+                  <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-gray-700 rounded shadow-lg z-30">
+                    {notifications.length > 0 ? (
+                      notifications.map((n) => (
+                        <div
+                          key={n.id}
+                          onClick={() => handleNotificationClick(n)}
+                          className="px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer text-sm"
+                        >
+                          {n.message}
+                        </div>
+                      ))
+                    ) : (
+                      <div className="px-4 py-2 text-gray-500 text-sm">
+                        No new notifications
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
-            ) : (
-              <div className="flex items-center space-x-2">
-                <AuthButton to="/auth/register">Register</AuthButton>
-                <AuthButton to="/auth/login" variant="outline">Login</AuthButton>
+            )}
+
+            {/* Chat */}
+            <div className="relative" ref={dropdownRef}>
+              <button
+                onClick={() => setDropdownOpen((o) => !o)}
+                className="text-gray-600 hover:text-blue-600"
+                title="Chat"
+              >
+                <FaUserAlt className="h-5 w-5" />
+                {unread.length > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full px-1">
+                    {unread.length}
+                  </span>
+                )}
+              </button>
+              {dropdownOpen && (
+                <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-700 rounded shadow-lg z-30">
+                  <div className="px-4 py-2 border-b text-sm">{userName}</div>
+                  <Link
+                    to={`/profile/${user.uid}`}
+                    className="flex items-center px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 text-sm"
+                  >
+                    <FaUserAlt className="mr-2" /> Profile
+                  </Link>
+                  <Link
+                    to="/favorites"
+                    className="flex items-center px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 text-sm"
+                  >
+                    <FaHeart className="mr-2" /> My Favorites
+                  </Link>
+                  <Link
+                    to="/chat"
+                    className="flex items-center px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 text-sm"
+                  >
+                    <FaComments className="mr-2" /> Chat
+                  </Link>
+                  <button
+                    onClick={() => {
+                      handleSignout();
+                      setDropdownOpen(false);
+                    }}
+                    className="w-full flex items-center px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 text-sm"
+                  >
+                    <FaSignOutAlt className="mr-2" /> Sign out
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Auth Buttons */}
+            {!user && (
+              <div className="flex space-x-2">
+                <Link
+                  to="/auth/register"
+                  className="px-3 py-1 bg-blue-600 text-white rounded"
+                >
+                  Register
+                </Link>
+                <Link
+                  to="/auth/login"
+                  className="px-3 py-1 border border-blue-600 text-blue-600 rounded"
+                >
+                  Login
+                </Link>
               </div>
             )}
           </div>
         </div>
       </div>
+
       <MapPopup
         isOpen={showMapPopup}
         onClose={() => setShowMapPopup(false)}
@@ -308,40 +441,4 @@ const Navbar = () => {
       />
     </nav>
   );
-};
-
-const NavLink = ({ to, children }) => (
-  <Link
-    to={to}
-    className="text-gray-600 hover:text-blue-600 dark:text-gray-300 dark:hover:text-white px-4 py-2 rounded-md text-sm font-medium transition duration-300 ease-in-out hover:bg-blue-100 dark:hover:bg-blue-900 relative group"
-  >
-    {children}
-    <span className="absolute bottom-0 left-0 w-full h-0.5 bg-blue-600 transform scale-x-0 transition-transform duration-300 ease-in-out group-hover:scale-x-100"></span>
-  </Link>
-);
-
-const DropdownLink = ({ to, icon: Icon, children, onClick, className }) => (
-  <Link
-    to={to}
-    onClick={onClick}
-    className={`flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-600 transition duration-300 ease-in-out ${className}`}
-  >
-    <Icon className="inline-block mr-2" />
-    {children}
-  </Link>
-);
-
-const AuthButton = ({ to, children, variant = "default" }) => (
-  <Link
-    to={to}
-    className={`px-4 py-2 rounded-md text-sm font-medium transition duration-300 ease-in-out transform hover:-translate-y-1 hover:shadow-lg ${
-      variant === "outline"
-        ? "text-blue-600 bg-white border border-blue-600 hover:bg-blue-50"
-        : "text-white bg-blue-600 hover:bg-blue-700"
-    } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500`}
-  >
-    {children}
-  </Link>
-);
-
-export default Navbar;
+}
