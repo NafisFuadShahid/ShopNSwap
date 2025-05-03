@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
+import { sendNotification } from "../utils/sendNotification";
 import {
   deleteDoc,
   doc,
@@ -45,6 +46,7 @@ const Ad = () => {
   const [idx, setIdx] = useState(0);
   const [seller, setSeller] = useState(null);
   const [showNumber, setShowNumber] = useState(false);
+  const [currentUserName, setCurrentUserName] = useState("");
   const [isFavorite, setIsFavorite] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
 
@@ -80,6 +82,30 @@ const Ad = () => {
   useEffect(() => {
     getAd();
   }, [id]);
+
+
+
+  useEffect(() => {
+    const fetch = async () => {
+      const docSnap = await getDoc(doc(db, "ads", id));
+      if (!docSnap.exists()) return;
+      const data = { id: docSnap.id, ...docSnap.data() };
+      setAd(data);
+
+      const sellerSnap = await getDoc(doc(db, "users", data.postedBy));
+      if (sellerSnap.exists()) {
+        setSeller({ id: sellerSnap.id, ...sellerSnap.data() });
+      }
+    };
+    fetch();
+  }, [id]);
+
+  useEffect(() => {
+    if (!auth.currentUser) return;
+    getDoc(doc(db, "users", auth.currentUser.uid)).then((snap) => {
+      if (snap.exists()) setCurrentUserName(snap.data().name);
+    });
+  }, []);
 
   // =====================
   //   FAVORITE LOGIC
@@ -121,24 +147,76 @@ const Ad = () => {
     setSwapAds(ads);
   };
 
-  const handleBidClick = () => {
-    setShowBidDialog(true);
-  };
+  const handleBidClick = () => setShowBidDialog(true);
 
   const handleSwapBid = async (swapAdId) => {
     try {
       await setDoc(doc(db, "bids", `${id}_${swapAdId}`), {
         originalAdId: id,
-        swapAdId: swapAdId,
+        swapAdId,
         bidder: auth.currentUser.uid,
         status: "pending",
         createdAt: new Date(),
       });
       toast.success("Bid placed successfully!");
       setShowBidDialog(false);
-    } catch (error) {
-      console.error("Error placing bid: ", error);
-      toast.error("Failed to place bid. Please try again.");
+
+      // notify owner
+      await sendNotification(
+        ad.postedBy,
+        "swap_request",
+        `${currentUserName} has proposed a swap for "${ad.title}".`,
+        `/ad/${id}`
+      );
+      // notify yourself
+      await sendNotification(
+        auth.currentUser.uid,
+        "swap_request_sent",
+        `You placed a swap bid for "${ad.title}".`,
+        `/ad/${id}`
+      );
+    } catch {
+      toast.error("Failed to place bid.");
+    }
+  };
+
+  const handleAcceptBid = async (bidId) => {
+    const bid = bids.find(b => b.id === bidId);
+    if (!bid) return;
+    try {
+      await updateDoc(doc(db, "bids", bidId), { status: "accepted" });
+      setBids(prev => prev.filter(b => b.id !== bidId));
+      toast.success("Bid accepted!");
+
+      // notify bidder
+      await sendNotification(
+        bid.bidder.id,
+        "swap_accepted",
+        `${seller.name} accepted your swap bid for "${ad.title}".`,
+        `/ad/${id}`
+      );
+    } catch {
+      toast.error("Failed to accept bid.");
+    }
+  };
+
+  const handleDeclineBid = async (bidId) => {
+    const bid = bids.find(b => b.id === bidId);
+    if (!bid) return;
+    try {
+      await updateDoc(doc(db, "bids", bidId), { status: "declined" });
+      setBids(prev => prev.filter(b => b.id !== bidId));
+      toast.info("Bid declined.");
+
+      // notify bidder
+      await sendNotification(
+        bid.bidder.id,
+        "swap_declined",
+        `${seller.name} declined your swap bid for "${ad.title}".`,
+        `/ad/${id}`
+      );
+    } catch {
+      toast.error("Failed to decline bid.");
     }
   };
 
@@ -225,12 +303,15 @@ const Ad = () => {
   // =====================
   const bkashPaymentHandler = async () => {
     try {
-      const response = await Axios.post("http://localhost:5000/bkash-checkout", {
-        amount: ad.price,
-        callbackURL: "http://localhost:5000/bkash-callback",
-        orderID: "1234",
-        reference: "12345",
-      });
+      const response = await Axios.post(
+        "http://localhost:5000/bkash-checkout",
+        {
+          amount: ad.price,
+          callbackURL: "http://localhost:5000/bkash-callback",
+          orderID: "1234",
+          reference: "12345",
+        }
+      );
       console.log(response);
       window.location.href = response?.data;
     } catch (error) {
@@ -238,6 +319,8 @@ const Ad = () => {
       toast.error("Payment initiation failed. Please try again.");
     }
   };
+
+
 
   if (!ad) return null;
 
@@ -345,9 +428,7 @@ const Ad = () => {
         <div
           className="gallery-nav gallery-nav-right"
           onClick={() =>
-            setIdx((prev) =>
-              prev === ad.images.length - 1 ? 0 : prev + 1
-            )
+            setIdx((prev) => (prev === ad.images.length - 1 ? 0 : prev + 1))
           }
         >
           <AiOutlineRight size={24} />
@@ -391,7 +472,8 @@ const Ad = () => {
                 Condition: <span className="font-semibold">{ad.condition}</span>
               </p>
               <p>
-                {ad.location} - <Moment fromNow>{ad.publishedAt.toDate()}</Moment>
+                {ad.location} -{" "}
+                <Moment fromNow>{ad.publishedAt.toDate()}</Moment>
               </p>
             </div>
 
@@ -421,15 +503,14 @@ const Ad = () => {
                 </button>
               )}
 
-            {ad.adType === "swap" &&
-              ad.postedBy === auth.currentUser?.uid && (
-                <button
-                  className="mt-4 bg-purple-500 hover:bg-purple-600 text-white py-2 px-4 rounded"
-                  onClick={handleViewBids}
-                >
-                  View Bids
-                </button>
-              )}
+            {ad.adType === "swap" && ad.postedBy === auth.currentUser?.uid && (
+              <button
+                className="mt-4 bg-purple-500 hover:bg-purple-600 text-white py-2 px-4 rounded"
+                onClick={handleViewBids}
+              >
+                View Bids
+              </button>
+            )}
           </div>
         </div>
 
@@ -553,6 +634,9 @@ const Ad = () => {
           <div className="bg-white p-6 rounded-lg max-w-3xl w-full">
             <h2 className="text-2xl font-bold mb-4">Bids for Your Ad</h2>
             <div className="space-y-4 max-h-96 overflow-y-auto">
+              {bids.length === 0 && (
+                <p className="text-center text-gray-600">No pending bids.</p>
+              )}
               {bids.map((bid) => (
                 <div
                   key={bid.id}
@@ -571,28 +655,26 @@ const Ad = () => {
                       </p>
                     </div>
                   </div>
-                  <button
-                    onClick={() =>
-                      window.open(
-                        `/${bid.swapAd.category.toLowerCase()}/${bid.swapAd.id}`,
-                        "_blank"
-                      )
-                    }
-                    className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded"
-                  >
-                    View Ad
-                  </button>
+                  <div className="space-x-2">
+                    <button
+                      onClick={() => handleAcceptBid(bid.id)}
+                      className="bg-green-500 hover:bg-green-600 text-white py-1 px-3 rounded"
+                    >
+                      Accept
+                    </button>
+                    <button
+                      onClick={() => handleDeclineBid(bid.id)}
+                      className="bg-red-500 hover:bg-red-600 text-white py-1 px-3 rounded"
+                    >
+                      Decline
+                    </button>
+                  </div>
                 </div>
               ))}
-              {bids.length === 0 && (
-                <p className="text-center text-gray-600">
-                  No bids yet for this ad.
-                </p>
-              )}
             </div>
             <button
-              className="mt-4 bg-gray-300 hover:bg-gray-400 text-gray-800 py-2 px-4 rounded"
               onClick={() => setShowBidsDialog(false)}
+              className="mt-4 bg-gray-300 hover:bg-gray-400 text-gray-800 py-2 px-4 rounded"
             >
               Close
             </button>
