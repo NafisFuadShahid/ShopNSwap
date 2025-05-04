@@ -13,6 +13,8 @@ import {
   getDocs,
   addDoc,
 } from "firebase/firestore";
+import StripePayment from '../components/StripePayment';
+
 import { deleteDoc as deleteAdDoc } from "firebase/firestore";
 import { auth, db, storage } from "../firebaseConfig";
 import { ref, deleteObject } from "firebase/storage";
@@ -606,6 +608,14 @@ const Ad = () => {
                       Pay with bKash
                     </button>
                   )}
+                  
+{ad.adType === 'sell' && !ad.isSold && (
+  <div className="mt-6">
+    <h3 className="text-lg font-semibold mb-2">Pay with Card</h3>
+    <StripePayment amount={Math.round(ad.price * 100)} adId={ad.id} currency="BDT" />
+  </div>
+)}
+
               </div>
             ) : (
               <p className="text-center text-gray-600 bg-gray-100 p-4 rounded">
