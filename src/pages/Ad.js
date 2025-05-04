@@ -13,6 +13,7 @@ import {
   getDocs,
   addDoc,
 } from "firebase/firestore";
+import { deleteDoc as deleteAdDoc } from "firebase/firestore";
 import { auth, db, storage } from "../firebaseConfig";
 import { ref, deleteObject } from "firebase/storage";
 import {
@@ -197,6 +198,39 @@ const Ad = () => {
       );
     } catch {
       toast.error("Failed to accept bid.");
+    }
+  };
+
+  const handleMarkAsDone = async () => {
+    if (!window.confirm(
+      `Are you sure you want to mark this ad as ${
+        ad.adType === "sell"
+          ? "sold"
+          : ad.adType === "swap"
+          ? "swapped"
+          : "donated"
+      }?`
+    )) return;
+
+    try {
+      // 1) mark it sold
+      await updateDoc(doc(db, "ads", id), { isSold: true });
+      // 2) delete the ad doc
+      await deleteDoc(doc(db, "ads", id));
+      toast.success(
+        `Your item has been marked as ${
+          ad.adType === "sell"
+            ? "sold"
+            : ad.adType === "swap"
+            ? "swapped"
+            : "donated"
+        } and removed.`
+      );
+      // 3) go back to your profile
+      navigate(`/profile/${auth.currentUser.uid}`);
+    } catch (err) {
+      console.error(err);
+      toast.error("Could not complete action. Please try again.");
     }
   };
 
@@ -483,12 +517,16 @@ const Ad = () => {
               </div>
             )}
 
-            {ad.postedBy === auth.currentUser?.uid && (
+          {ad.postedBy === auth.currentUser?.uid && !ad.isSold && (
               <button
-                className="mt-4 flex items-center text-red-500 hover:text-red-700 transition-colors duration-300"
-                onClick={deleteAd}
+                onClick={handleMarkAsDone}
+                className="mt-4 w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-4 rounded transition"
               >
-                <FaTrashAlt className="mr-2" /> Delete Ad
+                {ad.adType === "sell"
+                  ? "Mark as Sold"
+                  : ad.adType === "swap"
+                  ? "Mark as Swapped"
+                  : "Mark as Donated"}
               </button>
             )}
 
