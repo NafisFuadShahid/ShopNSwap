@@ -25,7 +25,7 @@
   Location-based filtering and updates.
 
 - **Payments**  
-  Integrated Stripe checkout for purchases.
+  Integrated Stripe and Bkash checkout for purchases.
 
 ---
 
